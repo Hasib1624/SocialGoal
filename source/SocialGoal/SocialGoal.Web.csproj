@@ -217,16 +217,13 @@
     </Compile>
     <Compile Include="Services\CreateNotificationList.cs" />
     <Compile Include="Startup.cs" />
-    <Compile Include="ViewModels\ChangePasswordFormModel.cs" />
     <Compile Include="ViewModels\CommentFormModel.cs" />
     <Compile Include="ViewModels\CommentsViewModel.cs" />
-    <Compile Include="ViewModels\EmailFormModel.cs" />
     <Compile Include="ViewModels\FocusFormModel.cs" />
     <Compile Include="ViewModels\FocusViewModel.cs" />
     <Compile Include="ViewModels\FollowersViewModel.cs" />
     <Compile Include="ViewModels\FollowingViewModel.cs" />
     <Compile Include="ViewModels\FollowRequestFormModel.cs" />
-    <Compile Include="ViewModels\FollowRequestViewModel.cs" />
     <Compile Include="ViewModels\GoalFormModel.cs" />
     <Compile Include="ViewModels\GoalListViewModel.cs" />
     <Compile Include="ViewModels\GoalsPageViewModel.cs" />
@@ -249,7 +246,6 @@
     <Compile Include="ViewModels\GroupViewModel.cs" />
     <Compile Include="ViewModels\HomeViewModel.cs" />
     <Compile Include="ViewModels\InviteEmailFormModel.cs" />
-    <Compile Include="ViewModels\InviteUserFormModel.cs" />
     <Compile Include="ViewModels\MemberViewModel.cs" />
     <Compile Include="ViewModels\NotificationsViewModel.cs" />
     <Compile Include="ViewModels\NotificationViewModel.cs" />

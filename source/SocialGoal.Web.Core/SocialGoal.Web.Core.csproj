@@ -59,9 +59,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActionFilters\AntiForgeryTokenFilterProvider .cs" />
-    <Compile Include="ActionFilters\CompressResponseAttribute.cs" />
-    <Compile Include="ActionFilters\SocialGoalAuthorizeAttribute.cs" />
     <Compile Include="Authentication\DefaultFormsAuthentication.cs" />
     <Compile Include="Authentication\IFormsAuthentication.cs" />
     <Compile Include="Authentication\UserAuthenticationTicketBuilder.cs" />

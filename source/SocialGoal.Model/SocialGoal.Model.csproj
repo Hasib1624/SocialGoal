@@ -68,7 +68,6 @@
     <Compile Include="Models\GroupUser.cs" />
     <Compile Include="Models\Metric.cs" />
     <Compile Include="Models\NotificationType.cs" />
-    <Compile Include="Models\ProfilePic.cs" />
     <Compile Include="Models\RegistrationToken.cs" />
     <Compile Include="Models\SecurityToken.cs" />
     <Compile Include="Models\Support.cs" />
