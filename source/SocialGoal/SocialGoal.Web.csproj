@@ -607,7 +607,6 @@
     <Content Include="Views\Account\UserProfile.cshtml" />
     <Content Include="Views\Account\_FollowersView.cshtml" />
     <Content Include="Views\Account\_FollowingsView.cshtml" />
-    <Content Include="Views\Account\AccessDenied.cshtml" />
     <Content Include="Views\Group\_GroupsTable.cshtml" />
     <Content Include="Views\Group\ListOfGroups.cshtml" />
     <Content Include="Views\Shared\_AlertInfo.cshtml" />
