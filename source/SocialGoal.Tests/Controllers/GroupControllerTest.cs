@@ -61,14 +61,11 @@ namespace SocialGoal.Tests.Controllers
         IMetricService metricService;
         IFocusService focusService;
         IGroupGoalService groupgoalService;
-        ISecurityTokenService securityTokenService;
         IGroupUpdateService groupUpdateService;
         IGroupCommentService groupCommentService;
         IGoalStatusService goalStatusService;
         IGroupRequestService groupRequestService;
-        IFollowUserService followUserService;
         IGroupCommentUserService groupCommentUserService;
-        IGroupUpdateUserService updateUserService;
         IUserProfileService userProfileService;
         IGroupUpdateSupportService groupUpdateSupportService;
         IGroupUpdateUserService groupUpdateUserService;
@@ -135,7 +132,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
 
             controller.ControllerContext = Fakes.SignedIn();
@@ -229,7 +226,7 @@ namespace SocialGoal.Tests.Controllers
             goalStatusRepository.Setup(x => x.GetAll()).Returns(fake);
 
             //Act
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult result = controller.GroupGoal(1) as ViewResult;
 
             //Assert
@@ -244,7 +241,7 @@ namespace SocialGoal.Tests.Controllers
         {
             //Arrange
             GroupFormModel group = new GroupFormModel();
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             //Act
             PartialViewResult result = controller.CreateGroup() as PartialViewResult;
             //Assert
@@ -259,7 +256,7 @@ namespace SocialGoal.Tests.Controllers
             ApplicationUser applicationUser = getApplicationUser();
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
 
 
@@ -306,7 +303,7 @@ namespace SocialGoal.Tests.Controllers
 
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
 
             controller.ControllerContext = Fakes.SignedIn();
@@ -345,7 +342,7 @@ namespace SocialGoal.Tests.Controllers
 
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -375,7 +372,7 @@ namespace SocialGoal.Tests.Controllers
         public void Focus_Name_Mandatory()
         {
             // Arrange                    
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             // The MVC pipeline doesn't run, so binding and validation don't run. 
             controller.ModelState.AddModelError("", "mock error message");
             // Act          
@@ -393,7 +390,7 @@ namespace SocialGoal.Tests.Controllers
         public void Focus_Description_Mandatory()
         {
             // Arrange                    
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             // The MVC pipeline doesn't run, so binding and validation don't run. 
             controller.ModelState.AddModelError("", "mock error message");
 
@@ -411,7 +408,7 @@ namespace SocialGoal.Tests.Controllers
         public void Create_Focus()
         {
             ApplicationUser applicationUser = getApplicationUser();
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -483,7 +480,7 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
             userRepository.Setup(x => x.GetAll()).Returns(fakeUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -501,7 +498,7 @@ namespace SocialGoal.Tests.Controllers
 
             Group group = new Group() { GroupId = 1, GroupName = "Test", Description = "test" };
             groupRepository.Setup(x => x.GetById(1)).Returns(group);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             //Act
             ActionResult result = controller.CreateFocus(1) as ActionResult;
             //Assert
@@ -530,7 +527,7 @@ namespace SocialGoal.Tests.Controllers
 
             metricRepository.Setup(x => x.GetAll()).Returns(fakeMatrices);
             GroupGoalFormModel goal = new GroupGoalFormModel();
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             ViewResult result = controller.CreateGoal(1) as ViewResult;
 
@@ -545,7 +542,7 @@ namespace SocialGoal.Tests.Controllers
         public void Create_Goal()
         {
             ApplicationUser applicationUser = getApplicationUser();
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -592,7 +589,7 @@ namespace SocialGoal.Tests.Controllers
 
             Group group = new Group() { GroupId = 1, GroupName = "Test", Description = "test" };
             groupRepository.Setup(x => x.GetById(1)).Returns(group);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
 
             ViewResult actual = controller.EditGroup(1) as ViewResult;
@@ -610,7 +607,7 @@ namespace SocialGoal.Tests.Controllers
 
             Focus focus = new Focus() { FocusId = 1, FocusName = "Test", Description = "test" };
             focusRepository.Setup(x => x.GetById(1)).Returns(focus);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult actual = controller.EditFocus(1) as ViewResult;
             ClassicAssert.IsNotNull(actual, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(FocusFormModel),
@@ -627,7 +624,7 @@ namespace SocialGoal.Tests.Controllers
                 Description = "test"
             };
             focusRepository.Setup(x => x.GetById(1)).Returns(fake);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             ViewResult result = controller.DeleteFocus(1) as ViewResult;
 
@@ -649,7 +646,7 @@ namespace SocialGoal.Tests.Controllers
                 Description = "test"
             };
             groupRepository.Setup(x => x.GetById(1)).Returns(fake);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult result = controller.DeleteGroup(1) as ViewResult;
             ClassicAssert.IsNotNull(result, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(Group),
@@ -679,7 +676,7 @@ namespace SocialGoal.Tests.Controllers
 
             groupGoalRepository.Setup(x => x.GetById(1)).Returns(fake);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult result = controller.DeleteGoal(1) as ViewResult;
             ClassicAssert.IsNotNull(result, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(GroupGoal),
@@ -703,7 +700,7 @@ namespace SocialGoal.Tests.Controllers
             ClassicAssert.IsNotNull(fake);
             ClassicAssert.AreEqual("test", fake.FocusName);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.DeleteConfirmedFocus(1) as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
 
@@ -723,7 +720,7 @@ namespace SocialGoal.Tests.Controllers
 
             ClassicAssert.IsNotNull(fake);
             ClassicAssert.AreEqual(1, fake.GroupId);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.DeleteConfirmedGroup(1) as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
 
@@ -738,7 +735,7 @@ namespace SocialGoal.Tests.Controllers
             new Group { GroupName = "Test3", Description="Test3Desc"}
           }.AsEnumerable();
             groupRepository.Setup(x => x.GetAll()).Returns(fakeCategories);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // Act
             ViewResult result = controller.ListOfGroups() as ViewResult;
@@ -774,7 +771,7 @@ namespace SocialGoal.Tests.Controllers
             groupUserRepository.Setup(x => x.GetAll()).Returns(fakeGroupUser);
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // Act
             ViewResult result = controller.JoinedUsers(1) as ViewResult;
@@ -790,7 +787,7 @@ namespace SocialGoal.Tests.Controllers
         [Test]
         public void Edit_Group_Post()
         {
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // Act
             GroupFormModel group = new GroupFormModel()
@@ -810,7 +807,7 @@ namespace SocialGoal.Tests.Controllers
         [Test]
         public void Edit_Focus_Post()
         {
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // Act
             FocusFormModel group = new FocusFormModel()
@@ -875,7 +872,7 @@ namespace SocialGoal.Tests.Controllers
 
             metricRepository.Setup(x => x.GetAll()).Returns(fakeMatrices);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult result = controller.EditGoal(1) as ViewResult;
             ClassicAssert.IsNotNull(result, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(GroupGoalFormModel),
@@ -886,7 +883,7 @@ namespace SocialGoal.Tests.Controllers
         public void Edit_Goal_Post()
         {
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
 
             GroupGoalFormModel goal = new GroupGoalFormModel()
@@ -932,7 +929,7 @@ namespace SocialGoal.Tests.Controllers
             groupUserRepository.Setup(x => x.GetAll()).Returns(fakeGroupUser);
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // Act
             ViewResult result = controller.Members(1) as ViewResult;
@@ -953,7 +950,7 @@ namespace SocialGoal.Tests.Controllers
             };
             groupUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<GroupUser, bool>>>())).Returns(user);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.DeleteMember("402bd590-fdc7-49ad-9728-40efbfe512ec", 1) as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
         }
@@ -974,7 +971,7 @@ namespace SocialGoal.Tests.Controllers
                 GroupUser = user
             };
             groupGoalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.DeleteConfirmed(1) as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
 
@@ -983,7 +980,7 @@ namespace SocialGoal.Tests.Controllers
         [Test]
         public void Save_Update_Update_Mandatory_Test()
         {
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             // The MVC pipeline doesn't run, so binding and validation don't run. 
             controller.ModelState.AddModelError("", "mock error message");
@@ -1001,7 +998,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -1069,7 +1066,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -1147,7 +1144,7 @@ namespace SocialGoal.Tests.Controllers
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             PartialViewResult rslt = controller.DisplayComments(1) as PartialViewResult;
             ClassicAssert.IsNotNull(rslt, "View Result is null");
@@ -1164,7 +1161,7 @@ namespace SocialGoal.Tests.Controllers
 
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             controller.ControllerContext = Fakes.SignedIn();
 
@@ -1199,7 +1196,7 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             groupCommentRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<GroupComment, bool>>>())).Returns(cmnt);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             JsonResult count = controller.DisplayCommentCount(1) as JsonResult;
             ClassicAssert.IsNotNull(count);
             ClassicAssert.AreEqual(3, count.Value);
@@ -1221,7 +1218,7 @@ namespace SocialGoal.Tests.Controllers
             {
                 GroupId = 1
             };
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var searchString = "e";
             JsonResult result = controller.SearchUserForGroup(searchString, 1);
             ClassicAssert.IsNotNull(result);
@@ -1235,7 +1232,7 @@ namespace SocialGoal.Tests.Controllers
         {
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -1267,7 +1264,7 @@ namespace SocialGoal.Tests.Controllers
             };
             groupRepository.Setup(x => x.GetById(1)).Returns(grp);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             ViewResult reslt = controller.InviteUsers(1) as ViewResult;
             ClassicAssert.IsNotNull(reslt);
             ClassicAssert.IsInstanceOf(typeof(GroupViewModel),
@@ -1290,7 +1287,7 @@ namespace SocialGoal.Tests.Controllers
            
           }.AsEnumerable();
             groupUserRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<GroupUser, bool>>>())).Returns(fakeGroupUser);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             ViewResult result = controller.UsersList(2) as ViewResult;
             ClassicAssert.IsNotNull(result);
@@ -1309,7 +1306,7 @@ namespace SocialGoal.Tests.Controllers
 
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             //principal.SetupGet(x=>x.Get(((SocialGoalUser)(User.Identity)).UserId).Callback(1));
 
             //identity.Setup(x=>x.)
@@ -1338,7 +1335,7 @@ namespace SocialGoal.Tests.Controllers
 
 
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             //principal.SetupGet(x=>x.Get(((SocialGoalUser)(User.Identity)).UserId).Callback(1));
 
             //identity.Setup(x=>x.)
@@ -1375,7 +1372,7 @@ namespace SocialGoal.Tests.Controllers
 
             };
             groupGoalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             string result = controller.GoalStatus(1, 1) as string;
             ClassicAssert.AreEqual("InProgress", result);
         }
@@ -1389,7 +1386,7 @@ namespace SocialGoal.Tests.Controllers
                 GroupGoalId = 1
             };
             groupGoalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             JsonResult reslt = controller.GetGoalReport(1) as JsonResult;
             ClassicAssert.IsNotNull(reslt);
 
@@ -1404,7 +1401,7 @@ namespace SocialGoal.Tests.Controllers
           
           }.AsEnumerable();
             groupRepository.Setup(x => x.GetAll()).Returns(fake);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             PartialViewResult result = controller.Groupslist(0) as PartialViewResult;
             ClassicAssert.IsNotNull(result);
             ClassicAssert.IsInstanceOf(typeof(IEnumerable<Group>), result.ViewData.Model, "Wrong View Model");
@@ -1427,7 +1424,7 @@ namespace SocialGoal.Tests.Controllers
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec"
             };
             groupRequestRepository.Setup(x => x.Get(It.IsAny<Expression<Func<GroupRequest, bool>>>())).Returns(request);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.AcceptRequest(1, "402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
             ClassicAssert.AreEqual("ShowAllRequests", result.ActionName);
         }
@@ -1441,7 +1438,7 @@ namespace SocialGoal.Tests.Controllers
                 GroupId = 1
             };
             groupRequestRepository.Setup(x => x.Get(It.IsAny<Expression<Func<GroupRequest, bool>>>())).Returns(request);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.RejectRequest(1, "402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
             ClassicAssert.AreEqual("ShowAllRequests", result.ActionName);
         }
@@ -1457,7 +1454,7 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
             groupRequestRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<GroupRequest, bool>>>())).Returns(request);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             ViewResult result = controller.ShowAllRequests(1) as ViewResult;
             ClassicAssert.IsNotNull(result);
@@ -1476,7 +1473,7 @@ namespace SocialGoal.Tests.Controllers
 
             //userRepository.Setup(x => x.GetById(1)).Returns(user);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -1527,7 +1524,7 @@ namespace SocialGoal.Tests.Controllers
             };
             groupUdateRepository.Setup(x => x.GetById(1)).Returns(update);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             PartialViewResult result = controller.EditUpdate(1) as PartialViewResult;
             ClassicAssert.IsNotNull(result, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(GroupUpdateFormModel),
@@ -1545,7 +1542,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
 
             controller.ControllerContext = Fakes.SignedIn();
 
@@ -1614,7 +1611,7 @@ namespace SocialGoal.Tests.Controllers
             };
             groupUdateRepository.Setup(x => x.GetById(1)).Returns(update);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             PartialViewResult result = controller.DeleteUpdate(1) as PartialViewResult;
             ClassicAssert.IsNotNull(result, "View Result is null");
             ClassicAssert.IsInstanceOf(typeof(GroupUpdate),
@@ -1636,7 +1633,7 @@ namespace SocialGoal.Tests.Controllers
 
             };
             groupUdateRepository.Setup(x => x.GetById(1)).Returns(update);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             var result = controller.DeleteConfirmedUpdate(1) as RedirectToActionResult;
             ClassicAssert.AreEqual("GroupGoal", result.ActionName);
 
@@ -1657,7 +1654,7 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             groupUpdateSupportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<GroupUpdateSupport, bool>>>())).Returns(updtsprt);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             int count = controller.NoOfSupports(1);
             ClassicAssert.IsNotNull(count);
             ClassicAssert.AreEqual("3", count.ToString());
@@ -1678,7 +1675,7 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             groupUpdateSupportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<GroupUpdateSupport, bool>>>())).Returns(updtsprt);
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             JsonResult count = controller.DisplayUpdateSupportCount(1) as JsonResult;
             ClassicAssert.IsNotNull(count);
             ClassicAssert.AreEqual(3, count.Value);
@@ -1711,7 +1708,7 @@ namespace SocialGoal.Tests.Controllers
             };
             groupUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<GroupUser, bool>>>())).Returns(grpuser);
 
-            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, securityTokenService, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, followUserService, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
+            GroupController controller = new GroupController(groupService, groupUserService, userService, metricService, focusService, groupgoalService, groupInvitationService, null, groupUpdateService, groupCommentService, goalStatusService, groupRequestService, null, groupCommentUserService, groupUpdateSupportService, groupUpdateUserService, new Mock<IUserMailer>().Object);
             PartialViewResult result = controller.SupportersOfUpdate(1) as PartialViewResult;
             ClassicAssert.IsNotNull(result);
             ClassicAssert.IsInstanceOf(typeof(GroupUpdateSupportersViewModel), result.ViewData.Model, "Wrong View Model");

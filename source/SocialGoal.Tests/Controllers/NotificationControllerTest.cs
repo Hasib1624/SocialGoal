@@ -35,9 +35,6 @@ namespace SocialGoal.Tests.Controllers
 
         Mock<IUnitOfWork> unitOfWork;
 
-        IGoalService goalService;
-        IUpdateService updateService;
-        ICommentService commentService;
         IGroupInvitationService groupInvitationService;
         ISupportInvitationService supportInvitationService;
         IFollowRequestService followRequestService;
@@ -74,7 +71,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            NotificationController controller = new NotificationController(goalService, updateService, commentService, groupInvitationService, supportInvitationService, followRequestService, userService);
+            NotificationController controller = new NotificationController(null, null, null, groupInvitationService, supportInvitationService, followRequestService, userService);
 
 
             controller.ControllerContext = Fakes.SignedIn();
@@ -127,7 +124,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            NotificationController controller = new NotificationController(goalService, updateService, commentService, groupInvitationService, supportInvitationService, followRequestService, userService);
+            NotificationController controller = new NotificationController(null, null, null, groupInvitationService, supportInvitationService, followRequestService, userService);
 
 
             controller.ControllerContext = Fakes.SignedIn();
@@ -183,7 +180,7 @@ namespace SocialGoal.Tests.Controllers
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            NotificationController controller = new NotificationController(goalService, updateService, commentService, groupInvitationService, supportInvitationService, followRequestService, userService);
+            NotificationController controller = new NotificationController(null, null, null, groupInvitationService, supportInvitationService, followRequestService, userService);
 
 
             controller.ControllerContext = Fakes.SignedIn();

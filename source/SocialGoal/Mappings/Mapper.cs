@@ -96,7 +96,6 @@ namespace SocialGoal.Mappings
         private static partial Group ToDomain(GroupFormModel source);
         private static partial Focus ToDomain(FocusFormModel source);
         private static partial Update ToDomain(UpdateFormModel source);
-        private static partial ApplicationUser ToDomain(UserFormModel source);
         private static partial UserProfile ToDomain(UserProfileFormModel source);
         private static partial GroupGoal ToDomain(GroupGoalFormModel source);
         private static partial GroupUpdate ToDomain(GroupUpdateFormModel source);

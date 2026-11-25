@@ -39,9 +39,6 @@ namespace SocialGoal.Web.Controllers.Test
 
         IUserService userService;
         IUserProfileService userProfileService;
-        IGoalService goalService;
-        IUpdateService updateService;
-        ICommentService commentService;
         IFollowRequestService followRequestService;
         IFollowUserService followUserService;
         ISecurityTokenService securityTokenService;
@@ -87,7 +84,7 @@ namespace SocialGoal.Web.Controllers.Test
               new ApplicationUser{Activated=true,Email="user4@foo.com",FirstName="user4",LastName="user4",RoleId=0}
           }.AsEnumerable();
             userRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(fake);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController contr = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             IEnumerable<ApplicationUser> result = contr.SearchUser("u") as IEnumerable<ApplicationUser>;
             ClassicAssert.IsNotNull(result);
             ClassicAssert.AreEqual(4, result.Count(), "not matching");
@@ -98,7 +95,7 @@ namespace SocialGoal.Web.Controllers.Test
         {
             var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
             PartialViewResult result = controller.ImageUpload() as PartialViewResult;
@@ -118,7 +115,7 @@ namespace SocialGoal.Web.Controllers.Test
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
                 LocalPath = "dddd"
             };
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             ViewResult result = controller.UploadImage(image).Result as ViewResult;
             ClassicAssert.IsNotNull(result);
             ClassicAssert.IsInstanceOf(typeof(UploadImageViewModel), result.ViewData.Model, "WrongType");
@@ -131,7 +128,7 @@ namespace SocialGoal.Web.Controllers.Test
             var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
             UserProfile prfil = new UserProfile()
             {
@@ -170,7 +167,7 @@ namespace SocialGoal.Web.Controllers.Test
         {
             var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
             UserProfile userProfile = new UserProfile()
             {
@@ -192,7 +189,7 @@ namespace SocialGoal.Web.Controllers.Test
         {
             var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
             UserProfile grpuser = new UserProfile()
             {
@@ -220,7 +217,7 @@ namespace SocialGoal.Web.Controllers.Test
 
             profile.FirstName ="adarsh";
 
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController contr = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             var result = contr.EditProfile(profile) as RedirectToActionResult;
 
             ClassicAssert.AreEqual("UserProfile", result.ActionName);
@@ -234,7 +231,7 @@ namespace SocialGoal.Web.Controllers.Test
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
 
 
@@ -259,7 +256,7 @@ namespace SocialGoal.Web.Controllers.Test
             var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController contr = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             var result = contr.AcceptRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
 
@@ -276,7 +273,7 @@ namespace SocialGoal.Web.Controllers.Test
 
             };
             followRequestRepository.Setup(x => x.Get(It.IsAny<Expression<Func<FollowRequest, bool>>>())).Returns(request);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController contr = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
             var result = contr.RejectRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
             ClassicAssert.AreEqual("Index", result.ActionName);
         }
@@ -288,7 +285,7 @@ namespace SocialGoal.Web.Controllers.Test
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
             controller.ControllerContext = Fakes.SignedIn();
 
@@ -320,7 +317,7 @@ namespace SocialGoal.Web.Controllers.Test
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
             controller.ControllerContext = Fakes.SignedIn();
 
@@ -357,7 +354,7 @@ namespace SocialGoal.Web.Controllers.Test
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
             controller.ControllerContext = Fakes.SignedIn();
 
@@ -390,7 +387,7 @@ namespace SocialGoal.Web.Controllers.Test
         {
             var userManager = Fakes.UserManager().Object;
             Guid goalIdToken = Guid.NewGuid();
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
             ViewResult rslt = controller.Login("abcd") as ViewResult;
             ClassicAssert.IsNotNull(rslt);
@@ -407,7 +404,7 @@ namespace SocialGoal.Web.Controllers.Test
             Guid goalIdToken = Guid.NewGuid();
             // Guid 
             //controllerContext.SetupGet(p => p.HttpContext.Request.QueryString).Returns(querystring1);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             controller.ControllerContext = Fakes.SignedIn();
 
             SocialGoalSessionFacade.Accessor = Fakes.Accessor();
@@ -424,7 +421,7 @@ namespace SocialGoal.Web.Controllers.Test
             userManager.Setup(m => m.FindByNameAsync("adarsh")).ReturnsAsync(applicationUser);
             userManager.Setup(m => m.CheckPasswordAsync(applicationUser, "123456")).ReturnsAsync(true);
             var signInManager = Fakes.SignInManager(userManager.Object);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
             controller.ControllerContext = Fakes.SignedIn(Fakes.HttpWithAuthentication());
             controller.Url = Mock.Of<IUrlHelper>();
 
@@ -438,7 +435,7 @@ namespace SocialGoal.Web.Controllers.Test
         public void LogOff()
         {
             var userManager = Fakes.UserManager().Object;
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             SocialGoalSessionFacade.Accessor = Fakes.Accessor();
 
             controller.ControllerContext = Fakes.SignedIn();
@@ -450,7 +447,7 @@ namespace SocialGoal.Web.Controllers.Test
         public void Register_Get_Returns_View()
         {
             var userManager = Fakes.UserManager().Object;
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             ViewResult rslt = controller.Register() as ViewResult;
             ClassicAssert.IsNotNull(rslt);
         }
@@ -464,7 +461,7 @@ namespace SocialGoal.Web.Controllers.Test
                 .Callback<ApplicationUser, string>((user, password) => created = user)
                 .ReturnsAsync(IdentityResult.Success);
             var signInManager = Fakes.SignInManager(userManager.Object);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
+            AccountController controller = new AccountController(userService, userProfileService, null, null, null, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
             controller.ControllerContext = Fakes.SignedIn(Fakes.HttpWithAuthentication());
             controller.Url = Mock.Of<IUrlHelper>();
             SocialGoalSessionFacade.Accessor = Fakes.Accessor();

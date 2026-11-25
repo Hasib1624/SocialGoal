@@ -27,7 +27,7 @@ The front end (jQuery, Bootstrap, page scripts, URLs) is unchanged.
 Running it
 ----------
 
-You need the .NET 10 SDK and SQL Server (a container works):
+You need the .NET 10 SDK, Node 26 (browser tests, see `e2e/.nvmrc`) and SQL Server (a container works):
 
 ```bash
 export MSSQL_SA_PASSWORD='<choose a strong password>'

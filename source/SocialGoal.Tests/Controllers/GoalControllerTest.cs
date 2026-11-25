@@ -48,7 +48,6 @@ namespace SocialGoal.Tests.Controllers
 
 
         IGoalService goalService;
-        IFollowUserService followUserService;
         IMetricService metricService;
         IFocusService focusService;
         IUpdateService updateService;

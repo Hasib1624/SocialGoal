@@ -34,7 +34,6 @@ namespace SocialGoal.Tests.Controllers
         Mock<IGroupInvitationRepository> groupInvitationRepository;
         Mock<IUserRepository> userRepository;
         Mock<IFollowUserRepository> followUserRepository;
-        Mock<UserProfileRepository> userProfileRepository;
 
 
         Mock<IUnitOfWork> unitOfWork;
