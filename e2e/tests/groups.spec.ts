@@ -209,8 +209,8 @@ test.describe('Groups: focus areas and goals', () => {
     await page.locator('#Description').fill('Cardio');
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page).toHaveURL(/\/Group\/Focus\/\d+/);
-    // current behavior (possible bug): the focus is saved, but the page it redirects to does not compile
-    await expect(page.locator('body')).toContainText('Compilation Error');
+    // fixed in the port: the original focus page did not compile
+    await expect(page.getByRole('heading', { name: focus })).toBeVisible();
 
     await page.goto(`/Group/Index/${group.id}`);
     await expect(page.locator('#focuslistcontainer')).toContainText(focus);
@@ -227,7 +227,7 @@ test.describe('Groups: focus areas and goals', () => {
     await expect(page.locator('#focuslistcontainer')).not.toContainText(`${focus} v2`);
   });
 
-  test('a member can create and delete a group goal (editing is broken, see below)', async ({ page }) => {
+  test('a member can create and delete a group goal and open its edit page', async ({ page }) => {
     const user = await register(page, 'gg');
     const group = await createGroup(page);
     const goalName = `Group goal ${uniq()}`;
@@ -253,10 +253,10 @@ test.describe('Groups: focus areas and goals', () => {
     await expect(page).toHaveURL(/\/Group\/GroupGoal\/\d+/);
     await expect(page.locator('h4', { hasText: goalName })).toBeVisible();
 
-    // current behavior (possible bug): the group-goal edit page does not compile, so group goals cannot be edited
+    // fixed in the port: the original edit page did not compile
     await page.locator('#editBtn').click();
     await expect(page).toHaveURL(/\/Group\/EditGoal\/\d+/);
-    await expect(page.locator('body')).toContainText('Compilation Error');
+    await expect(page.locator('#GoalName')).toHaveValue(goalName);
     await page.goBack();
 
     await page.locator('#delete').click();

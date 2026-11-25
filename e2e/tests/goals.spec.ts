@@ -221,13 +221,13 @@ test.describe('Goals: following', () => {
     await invitee.context.close();
   });
 
-  // current behavior (possible bug): the supporters view does not compile (uses ApplicationUser.UserId)
-  test('the supporters page for a goal currently fails with a server error', async ({ page }) => {
+  // fixed in the port: the original view did not compile (used ApplicationUser.UserId)
+  test('the supporters page for a goal renders', async ({ page }) => {
     await register(page, 'g');
     const goal = await createGoal(page);
     const res = await page.goto(`/Goal/Supporters/${goal.id}`);
-    expect(res!.status()).toBe(500);
-    await expect(page.locator('body')).toContainText("does not contain a definition for 'UserId'");
+    expect(res!.status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Supporters' })).toBeVisible();
   });
 });
 

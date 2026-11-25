@@ -1,8 +1,9 @@
 # SocialGoal end-to-end tests (Playwright)
 
 User-centric browser tests that describe the behavior of the **original** SocialGoal app (ASP.NET MVC 5, .NET Framework 4.8).
-They are meant to be run first against the original app (the "before" baseline) and later, **unchanged**, against the
-ported .NET 8 app (set `BASE_URL`).
+They are meant to be run first against the original app (the "before" baseline) and later, against the
+ported .NET 10 app (set `BASE_URL`). On this branch three expectations changed for views that did not compile
+in the original; see the root README.
 
 ## Prerequisites
 
