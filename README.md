@@ -3,7 +3,7 @@ SocialGoal on .NET 10
 
 SocialGoal is a social network for sharing goals and progress, originally built by
 [Marlabs](http://www.marlabs.com) as a learning app for ASP.NET MVC 5 and EF 6.
-This branch ports it to ASP.NET Core on .NET 10 developed and tested on Linux.
+This fork ports it to ASP.NET Core on .NET 10 developed and tested on Linux.
 
 Before and after
 ----------------
