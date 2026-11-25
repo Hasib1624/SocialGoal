@@ -1,19 +1,20 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Entity.ModelConfiguration;
 using SocialGoal.Model.Models;
 
 namespace SocialGoal.Data.Configuration
 {
-    public class GroupCommentUserConfguration:EntityTypeConfiguration<GroupCommentUser>
+    public class GroupCommentUserConfguration : IEntityTypeConfiguration<GroupCommentUser>
     {
-        public GroupCommentUserConfguration()
+        public void Configure(EntityTypeBuilder<GroupCommentUser> builder)
         {
-            Property(g => g.GroupCommentId).IsRequired();
-            Property(g => g.UserId).IsRequired();
+            builder.Property(g => g.GroupCommentId).IsRequired();
+            builder.Property(g => g.UserId).IsRequired();
         }
     }
 }

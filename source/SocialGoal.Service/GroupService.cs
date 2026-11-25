@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PagedList;
+using X.PagedList;
 using SocialGoal.Model.Models;
 using SocialGoal.Data.Repository;
 using SocialGoal.Data.Infrastructure;
@@ -163,18 +163,18 @@ namespace SocialGoal.Service
                 }
                 case GroupFilter.MyGroups:
                 {
-                    var groupsIds = groupUserrepository.GetMany(gru => gru.UserId == userId && gru.Admin).Select(gru => gru.GroupId);
+                    var groupsIds = groupUserrepository.GetMany(gru => gru.UserId == userId && gru.Admin).Select(gru => gru.GroupId).ToList();
                     return groupRepository.GetPage(page, where => groupsIds.Contains(where.GroupId), order => order.CreatedDate);
                 }
                 case GroupFilter.MyFollowingsGroups:
                 {
                     var userIds = followUserrepository.GetMany(g => g.FromUserId == userId).Select(x => x.ToUserId);
-                    var groupIds = from item in userIds from gruser in groupUserrepository.GetMany(g => g.UserId == item) select gruser.GroupId;
+                    var groupIds = (from item in userIds.ToList() from gruser in groupUserrepository.GetMany(g => g.UserId == item) select gruser.GroupId).ToList();
                     return groupRepository.GetPage(page, where => groupIds.Contains(where.GroupId), order => order.CreatedDate);
                 }
                 case GroupFilter.MyFollowedGroups:
                 {
-                    var groupIds = groupUserrepository.GetMany(g => (g.UserId == userId) && (g.Admin == false)).Select(item => item.GroupId);
+                    var groupIds = groupUserrepository.GetMany(g => (g.UserId == userId) && (g.Admin == false)).Select(item => item.GroupId).ToList();
                     return groupRepository.GetPage(page, where => groupIds.Contains(where.GroupId), order => order.CreatedDate);
                 }
                 default:

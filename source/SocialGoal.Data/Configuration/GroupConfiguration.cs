@@ -1,20 +1,21 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Entity.ModelConfiguration;
 using SocialGoal.Model.Models;
 
 namespace SocialGoal.Data.Configuration
 {
-    public class GroupConfiguration: EntityTypeConfiguration<Group>
+    public class GroupConfiguration : IEntityTypeConfiguration<Group>
     {
-        public GroupConfiguration()
+        public void Configure(EntityTypeBuilder<Group> builder)
         {
-            Property(g => g.GroupName).HasMaxLength(50);
-            Property(g => g.CreatedDate).IsRequired();
-            Property(g => g.Description).IsMaxLength();
+            builder.Property(g => g.GroupName).HasMaxLength(50);
+            builder.Property(g => g.CreatedDate).IsRequired();
+            builder.Property(g => g.Description);
         }
     }
 }

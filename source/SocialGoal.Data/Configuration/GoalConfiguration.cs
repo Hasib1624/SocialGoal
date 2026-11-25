@@ -1,24 +1,25 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Entity.ModelConfiguration;
 using SocialGoal.Model.Models;
 
 namespace SocialGoal.Data.Configuration
 {
-    public class GoalConfiguration: EntityTypeConfiguration<Goal>
+    public class GoalConfiguration : IEntityTypeConfiguration<Goal>
     {
-        public GoalConfiguration()
+        public void Configure(EntityTypeBuilder<Goal> builder)
         {
-            Property(g => g.GoalName).IsRequired().HasMaxLength(55);
-            Property(g => g.GoalType).IsRequired();
-            Property(g => g.GoalStatusId).IsRequired();
-            Property(g => g.StartDate).IsRequired();
-            Property(g => g.EndDate).IsRequired();
-            Property(g => g.CreatedDate).IsRequired();
-            Property(g => g.Desc).HasMaxLength(100);
+            builder.Property(g => g.GoalName).IsRequired().HasMaxLength(55);
+            builder.Property(g => g.GoalType).IsRequired();
+            builder.Property(g => g.GoalStatusId).IsRequired();
+            builder.Property(g => g.StartDate).IsRequired();
+            builder.Property(g => g.EndDate).IsRequired();
+            builder.Property(g => g.CreatedDate).IsRequired();
+            builder.Property(g => g.Desc).HasMaxLength(100);
         }
     }
 }
