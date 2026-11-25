@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNet.Identity.EntityFramework;
+﻿using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +13,6 @@ namespace SocialGoal.Model.Models
         {
             DateCreated = DateTime.Now;
         }
-
-        public string Email { get; set; }
 
         public string FirstName { get; set; }
 
@@ -31,10 +29,6 @@ namespace SocialGoal.Model.Models
         public int RoleId { get; set; }
 
         public virtual ICollection<Goal> Goals { get; set; }
-
-        public virtual ICollection<FollowUser> FollowFromUser { get; set; }
-
-        public virtual ICollection<FollowUser> FollowToUser { get; set; }
 
         public virtual ICollection<GroupRequest> GroupRequests { get; set; }        
 
