@@ -19,7 +19,7 @@ Before and after
 | Images | System.Drawing | SkiaSharp |
 | Errors | Elmah | Built-in logging |
 | Projects | Old-style csproj, `packages.config` | SDK-style |
-| Tests | NUnit 2 | NUnit 4 (all 113 original tests kept, sign-in and session setup rewritten, plus security checks) |
+| Tests | NUnit 2 | NUnit 5 (all 113 original tests kept, sign-in and session setup rewritten, plus security checks) |
 | Browser tests | 93 pass | 93 pass (3 expectations changed, see below) |
 
 The front end (jQuery, Bootstrap, page scripts, URLs) is unchanged.
