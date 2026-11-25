@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using SocialGoal.Web.Helpers;
+using NUnit.Framework.Legacy;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,27 +11,17 @@ using System.Threading.Tasks;
 using SocialGoal.Web.Controllers;
 using NUnit.Framework;
 using SocialGoal.Model.Models;
-using Microsoft.AspNet.Identity;
 using SocialGoal.Tests.Helpers;
 using SocialGoal.Data.Repository;
 using Moq;
 using SocialGoal.Data.Infrastructure;
-using System.Web.Mvc;
 using System.Security.Principal;
-using System.Web;
 using System.IO;
-using SocialGoal.Web.Core.Authentication;
 using SocialGoal.Service;
 using SocialGoal.Web.Mailers;
-using Mvc.Mailer;
 using SocialGoal.Models;
 using System.Linq.Expressions;
-using Microsoft.Owin.Security;
-using System.Web.Security;
-using SocialGoal.Web.Core.Models;
 using SocialGoal.Web.ViewModels;
-using AutoMapper;
-using System.Web.SessionState;
 using System.Reflection;
 using System.Collections.Specialized;
 namespace SocialGoal.Web.Controllers.Test
@@ -40,20 +35,7 @@ namespace SocialGoal.Web.Controllers.Test
         Mock<IFollowUserRepository> followUserRepository;
         Mock<ISecurityTokenRepository> securityTokenRepository;
         Mock<IUnitOfWork> unitOfWork;
-        Mock<ControllerContext> controllerContext;
-        Mock<IIdentity> identity;
-        Mock<IPrincipal> principal;
-        Mock<HttpContext> httpContext;
-        Mock<HttpContextBase> contextBase;
-        Mock<HttpRequestBase> httpRequest;
-        Mock<HttpResponseBase> httpResponse;
-        Mock<HttpSessionStateBase> httpSession;
-        Mock<GenericPrincipal> genericPrincipal;
 
-        Mock<TempDataDictionary> tempData;
-        Mock<HttpPostedFileBase> file;
-        Mock<Stream> stream;
-        Mock<IFormsAuthentication> authentication;
 
         IUserService userService;
         IUserProfileService userProfileService;
@@ -63,8 +45,6 @@ namespace SocialGoal.Web.Controllers.Test
         IFollowRequestService followRequestService;
         IFollowUserService followUserService;
         ISecurityTokenService securityTokenService;
-        IUserMailer userMailer = new UserMailer();
-        Mock<AccountController> accountController;
 
 
         [SetUp]
@@ -85,34 +65,20 @@ namespace SocialGoal.Web.Controllers.Test
             followUserService = new FollowUserService(followUserRepository.Object, unitOfWork.Object);
             securityTokenService = new SecurityTokenService(securityTokenRepository.Object, unitOfWork.Object);
 
-            controllerContext = new Mock<ControllerContext>();
-            contextBase = new Mock<HttpContextBase>();
-            httpRequest = new Mock<HttpRequestBase>();
-            httpResponse = new Mock<HttpResponseBase>();
-            genericPrincipal = new Mock<GenericPrincipal>();
-            httpSession = new Mock<HttpSessionStateBase>();
-            authentication = new Mock<IFormsAuthentication>();
 
 
-            identity = new Mock<IIdentity>();
-            principal = new Mock<IPrincipal>();
-            tempData = new Mock<TempDataDictionary>();
-            file = new Mock<HttpPostedFileBase>();
-            stream = new Mock<Stream>();
-            accountController = new Mock<AccountController>();
 
         }
 
         [TearDown]
         public void TearDown()
         {
-            TestSmtpClient.SentMails.Clear();
         }
 
         [Test]
         public void SearchUser()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             IEnumerable<ApplicationUser> fake = new List<ApplicationUser> 
             {
              new ApplicationUser{Activated=true,Email="user1@foo.com",FirstName="user1",LastName="user1",RoleId=0},
@@ -121,110 +87,52 @@ namespace SocialGoal.Web.Controllers.Test
               new ApplicationUser{Activated=true,Email="user4@foo.com",FirstName="user4",LastName="user4",RoleId=0}
           }.AsEnumerable();
             userRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(fake);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
+            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             IEnumerable<ApplicationUser> result = contr.SearchUser("u") as IEnumerable<ApplicationUser>;
-            Assert.IsNotNull(result);
-            Assert.AreEqual(4, result.Count(), "not matching");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.AreEqual(4, result.Count(), "not matching");
         }
 
         [Test]
         public void Image_Upload_GetView()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-            var formsAuthentication = new DefaultFormsAuthentication();
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
             PartialViewResult result = controller.ImageUpload() as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(UploadImageViewModel), result.ViewData.Model, "Wrong model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UploadImageViewModel), result.ViewData.Model, "Wrong model");
             var data = result.ViewData.Model as UploadImageViewModel;
-            Assert.AreEqual(null, data.LocalPath, "not matching");
+            ClassicAssert.AreEqual(null, data.LocalPath, "not matching");
         }
 
         [Test]
         public void Upload_Image_Post()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             UploadImageViewModel image = new UploadImageViewModel()
             {
                 IsFile = true,
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
                 LocalPath = "dddd"
             };
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            ViewResult result = controller.UploadImage(image) as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(UploadImageViewModel), result.ViewData.Model, "WrongType");
-            Assert.AreEqual("ImageUpload", result.ViewName);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            ViewResult result = controller.UploadImage(image).Result as ViewResult;
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UploadImageViewModel), result.ViewData.Model, "WrongType");
+            ClassicAssert.AreEqual("ImageUpload", result.ViewName);
         }
 
         [Test]
         public void UserProfile()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());           
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-            var formsAuthentication = new DefaultFormsAuthentication();
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
             UserProfile prfil = new UserProfile()
             {
                 FirstName="Adarsh",
@@ -251,48 +159,19 @@ namespace SocialGoal.Web.Controllers.Test
             };
             followUserRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<FollowUser, bool>>>())).Returns(fakeuser);
             ViewResult result = controller.UserProfile("402bd590-fdc7-49ad-9728-40efbfe512ec") as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(UserProfileViewModel), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UserProfileViewModel), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as UserProfileViewModel;
-            Assert.AreEqual("adarsh", data.UserName);
+            ClassicAssert.AreEqual("adarsh", data.UserName);
         }
 
         [Test]
         public void Edit_Basic_Info()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-            var formsAuthentication = new DefaultFormsAuthentication();
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
             UserProfile userProfile = new UserProfile()
             {
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
@@ -301,50 +180,20 @@ namespace SocialGoal.Web.Controllers.Test
                 Email = "adarsh@foo.com",
             };
             userProfileRepository.Setup(x => x.Get(It.IsAny<Expression<Func<UserProfile, bool>>>())).Returns(userProfile);
-            Mapper.CreateMap<UserProfile, UserProfileFormModel>();
             PartialViewResult result = controller.EditBasicInfo() as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(UserProfileFormModel), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UserProfileFormModel), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as UserProfileFormModel;
-            Assert.AreEqual("adarsh@foo.com", data.Email);
+            ClassicAssert.AreEqual("adarsh@foo.com", data.Email);
         }
 
         [Test]
         public void Edit_Personal_Info()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-            var formsAuthentication = new DefaultFormsAuthentication();
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
             UserProfile grpuser = new UserProfile()
             {
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
@@ -353,105 +202,73 @@ namespace SocialGoal.Web.Controllers.Test
                 State = "adarsh@foo.com",
             };
             userProfileRepository.Setup(x => x.Get(It.IsAny<Expression<Func<UserProfile, bool>>>())).Returns(grpuser);
-            Mapper.CreateMap<UserProfile, UserProfileFormModel>();
 
             PartialViewResult result = controller.EditPersonalInfo() as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(UserProfileFormModel), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UserProfileFormModel), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as UserProfileFormModel;
-            Assert.AreEqual("t", data.Address);
+            ClassicAssert.AreEqual("t", data.Address);
         }
 
         [Test]
         public void Editprofile_Post()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
             UserProfileFormModel profile = new UserProfileFormModel();
 
-            Mapper.CreateMap<UserProfileFormModel, UserProfile>();
             profile.FirstName ="adarsh";
 
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            var result = contr.EditProfile(profile) as RedirectToRouteResult;
+            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            var result = contr.EditProfile(profile) as RedirectToActionResult;
 
-            Assert.AreEqual("UserProfile", result.RouteValues["action"]);
+            ClassicAssert.AreEqual("UserProfile", result.ActionName);
         }
 
         [Test]
         public void Follow_Request()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            Mapper.CreateMap<FollowRequestFormModel, FollowRequest>();
 
 
-            var result = controller.FollowRequest("402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToRouteResult;
-            Assert.AreEqual("UserProfile", result.RouteValues["action"]);
+            var result = controller.FollowRequest("402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
+            ClassicAssert.AreEqual("UserProfile", result.ActionName);
         }
 
         [Test]
         public void Accept_Request()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            var result = contr.AcceptRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            var result = contr.AcceptRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
 
         }
 
         [Test]
         public void Delete_Follow_Request()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             FollowRequest request = new FollowRequest()
             {
                 FromUserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
@@ -459,59 +276,30 @@ namespace SocialGoal.Web.Controllers.Test
 
             };
             followRequestRepository.Setup(x => x.Get(It.IsAny<Expression<Func<FollowRequest, bool>>>())).Returns(request);
-            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
-            var result = contr.RejectRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            AccountController contr = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
+            var result = contr.RejectRequest("402bd590-fdc7-49ad-9728-40efbfe512ed","402bd590-fdc7-49ad-9728-40efbfe512ec") as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
         }
         [Test]
         public void UnFollow()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             FollowUser flwuser = new FollowUser()
             {
                 FromUserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",
@@ -520,59 +308,30 @@ namespace SocialGoal.Web.Controllers.Test
             };
             followUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<FollowUser, bool>>>())).Returns(flwuser);
 
-            var result = controller.Unfollow("402bd590-fdc7-49ad-9728-40efbfe512ed") as RedirectToRouteResult;
-            Assert.AreEqual("UserProfile", result.RouteValues["action"]);
+            var result = controller.Unfollow("402bd590-fdc7-49ad-9728-40efbfe512ed") as RedirectToActionResult;
+            ClassicAssert.AreEqual("UserProfile", result.ActionName);
         }
 
         [Test]
         public void Followers_List()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             IEnumerable<FollowUser> fakeuser = new List<FollowUser> {
             new FollowUser {FollowUserId =1, Accepted = false,FromUserId = "402bd590-fdc7-49ad-9728-40efbfe512ed", ToUserId = "402bd590-fdc7-49ad-9728-40efbfe512ec",},
             new FollowUser {FollowUserId =2, Accepted = false,FromUserId = "402bd590-fdc7-49ad-9728-40efbfe512ee", ToUserId = "402bd590-fdc7-49ad-9728-40efbfe512ec" },
@@ -580,63 +339,35 @@ namespace SocialGoal.Web.Controllers.Test
             };
             followUserRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<FollowUser, bool>>>())).Returns(fakeuser);
 
-            Mapper.CreateMap<ApplicationUser, FollowersViewModel>();
 
 
             ViewResult result = controller.Followers() as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(IEnumerable<FollowersViewModel>), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<FollowersViewModel>), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as IEnumerable<FollowersViewModel>;
-            Assert.AreEqual(2, data.Count());
+            ClassicAssert.AreEqual(2, data.Count());
         }
 
 
         [Test]
         public void Followings_list()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            MemoryUser user = new MemoryUser("adarsh");
+            var userManager = Fakes.UserManager().Object;
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService,userManager, Fakes.SignInManager(userManager).Object, null, null);
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
             IEnumerable<FollowUser> fakeuser = new List<FollowUser> {
             new FollowUser {FollowUserId =1, Accepted = false,FromUserId = "402bd590-fdc7-49ad-9728-40efbfe512ec", ToUserId ="402bd590-fdc7-49ad-9728-40efbfe512ed",},
@@ -645,172 +376,109 @@ namespace SocialGoal.Web.Controllers.Test
             };
             followUserRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<FollowUser, bool>>>())).Returns(fakeuser);
 
-            Mapper.CreateMap<ApplicationUser, FollowersViewModel>();
 
 
             ViewResult result = controller.Followings() as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(IEnumerable<FollowingViewModel>), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<FollowingViewModel>), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as IEnumerable<FollowingViewModel>;
-            Assert.AreEqual(2, data.Count());
+            ClassicAssert.AreEqual(2, data.Count());
         }
 
         [Test]
         public void Login_Get_View_If_Guid_Is_Null()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             Guid goalIdToken = Guid.NewGuid();
-            controllerContext.SetupGet(p => p.HttpContext.Request.QueryString).Returns(new NameValueCollection());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
-            controller.ControllerContext = controllerContext.Object;
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
             ViewResult rslt = controller.Login("abcd") as ViewResult;
-            Assert.IsNotNull(rslt);
+            ClassicAssert.IsNotNull(rslt);
 
         }
 
         [Test]
         public void Login_Get_View_If_Guid_Is_NotNull()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
+            var userManager = Fakes.UserManager().Object;
             //mocking QueryString
             var querystring = new NameValueCollection { { "guid", "got_value" } };
             var querystring1 = new NameValueCollection { { "reg", "value" } };
             Guid goalIdToken = Guid.NewGuid();
             // Guid 
-            controllerContext.SetupGet(p => p.HttpContext.Request.QueryString).Returns(querystring);
             //controllerContext.SetupGet(p => p.HttpContext.Request.QueryString).Returns(querystring1);
-            controllerContext.SetupGet(p => p.HttpContext.Session).Returns(httpSession.Object);
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
-            controller.ControllerContext = controllerContext.Object;
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn();
 
-            var httprequest = new HttpRequest("", "http://localhost/", "");
-            var stringWriter = new StringWriter();
-            var httpResponce = new HttpResponse(stringWriter);
-            var httpContext = new HttpContext(httprequest, httpResponce);
-            // Mocking HttpContext.Current
-            var sessionContainer = new HttpSessionStateContainer("id",
-                                    new SessionStateItemCollection(),
-                                    new HttpStaticObjectsCollection(),
-                                    10,
-                                    true,
-                                    HttpCookieMode.AutoDetect,
-                                    SessionStateMode.InProc,
-                                    false);
-
-            httpContext.Items["AspSession"] = typeof(HttpSessionState).GetConstructor(
-                        BindingFlags.NonPublic | BindingFlags.Instance,
-                        null, CallingConventions.Standard,
-                        new[] { typeof(HttpSessionStateContainer) },
-                        null)
-                        .Invoke(new object[] { sessionContainer });
-
-            HttpContext.Current = httpContext;
+            SocialGoalSessionFacade.Accessor = Fakes.Accessor();
 
             ViewResult rslt = controller.Login("abcd") as ViewResult;
-            Assert.IsNotNull(rslt);
+            ClassicAssert.IsNotNull(rslt);
         }
 
-        [Test()]
+        [Test]
         public void LoginTest()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
-            var mockAuthenticationManager = new Mock<IAuthenticationManager>();
-            mockAuthenticationManager.Setup(am => am.SignOut());
-            mockAuthenticationManager.Setup(am => am.SignIn());
-            controller.AuthenticationManager = mockAuthenticationManager.Object;
             ApplicationUser applicationUser = getApplicationUser();
-            userManager.CreateAsync(applicationUser, "123456");
-            var result = controller.Login(new LoginViewModel { Email = "adarsh", Password = "123456", RememberMe = false }, "abcd").Result;
-            Assert.IsNotNull(result);
-            var addedUser = userManager.FindByName("adarsh");
-            Assert.IsNotNull(addedUser);
-            Assert.AreEqual("adarsh", addedUser.UserName);
+            var userManager = Fakes.UserManager();
+            userManager.Setup(m => m.FindByNameAsync("adarsh")).ReturnsAsync(applicationUser);
+            userManager.Setup(m => m.CheckPasswordAsync(applicationUser, "123456")).ReturnsAsync(true);
+            var signInManager = Fakes.SignInManager(userManager.Object);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn(Fakes.HttpWithAuthentication());
+            controller.Url = Mock.Of<IUrlHelper>();
+
+            var result = controller.Login(new LoginViewModel { Email = "adarsh", Password = "123456", RememberMe = false }, "abcd").Result as RedirectToActionResult;
+
+            ClassicAssert.AreEqual("Index", result.ActionName);
+            signInManager.Verify(m => m.SignInAsync(applicationUser, false, null), Times.Once());
         }
 
         [Test]
         public void LogOff()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            var mockAuthenticationManager = new Mock<IAuthenticationManager>();
-            mockAuthenticationManager.Setup(am => am.SignOut());
-            mockAuthenticationManager.Setup(am => am.SignIn());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
-            controller.AuthenticationManager = mockAuthenticationManager.Object;
-            var httprequest = new HttpRequest("", "http://localhost/", "");
-            var stringWriter = new StringWriter();
-            var httpResponce = new HttpResponse(stringWriter);
-            var httpContext = new HttpContext(httprequest, httpResponce);
-            var sessionContainer = new HttpSessionStateContainer("id",
-                                    new SessionStateItemCollection(),
-                                    new HttpStaticObjectsCollection(),
-                                    10,
-                                    true,
-                                    HttpCookieMode.AutoDetect,
-                                    SessionStateMode.InProc,
-                                    false);
-            httpContext.Items["AspSession"] = typeof(HttpSessionState).GetConstructor(
-                        BindingFlags.NonPublic | BindingFlags.Instance,
-                        null, CallingConventions.Standard,
-                        new[] { typeof(HttpSessionStateContainer) },
-                        null)
-                        .Invoke(new object[] { sessionContainer });
-            HttpContext.Current = httpContext;
+            var userManager = Fakes.UserManager().Object;
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
+            SocialGoalSessionFacade.Accessor = Fakes.Accessor();
 
-            var result = controller.LogOff() as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            controller.ControllerContext = Fakes.SignedIn();
+            var result = controller.LogOff().Result as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
         }
 
         [Test]
         public void Register_Get_Returns_View()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
+            var userManager = Fakes.UserManager().Object;
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager, Fakes.SignInManager(userManager).Object, null, null);
             ViewResult rslt = controller.Register() as ViewResult;
-            Assert.IsNotNull(rslt);
+            ClassicAssert.IsNotNull(rslt);
         }
 
-        [Test()]
+        [Test]
         public void RegisterTest()
         {
-            var userManager = new UserManager<ApplicationUser>(new TestUserStore());
-            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager);
-            var mockAuthenticationManager = new Mock<IAuthenticationManager>();
-            mockAuthenticationManager.Setup(am => am.SignOut());
-            mockAuthenticationManager.Setup(am => am.SignIn());
-            controller.AuthenticationManager = mockAuthenticationManager.Object;
-            var httprequest = new HttpRequest("", "http://localhost/", "");
-            var stringWriter = new StringWriter();
-            var httpResponce = new HttpResponse(stringWriter);
-            var httpContext = new HttpContext(httprequest, httpResponce);
+            ApplicationUser created = null;
+            var userManager = Fakes.UserManager();
+            userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), "123456"))
+                .Callback<ApplicationUser, string>((user, password) => created = user)
+                .ReturnsAsync(IdentityResult.Success);
+            var signInManager = Fakes.SignInManager(userManager.Object);
+            AccountController controller = new AccountController(userService, userProfileService, goalService, updateService, commentService, followRequestService, followUserService, securityTokenService, userManager.Object, signInManager.Object, null, null);
+            controller.ControllerContext = Fakes.SignedIn(Fakes.HttpWithAuthentication());
+            controller.Url = Mock.Of<IUrlHelper>();
+            SocialGoalSessionFacade.Accessor = Fakes.Accessor();
 
-            var sessionContainer = new HttpSessionStateContainer("id",
-                                    new SessionStateItemCollection(),
-                                    new HttpStaticObjectsCollection(),
-                                    10,
-                                    true,
-                                    HttpCookieMode.AutoDetect,
-                                    SessionStateMode.InProc,
-                                    false);
-            httpContext.Items["AspSession"] = typeof(HttpSessionState).GetConstructor(
-                        BindingFlags.NonPublic | BindingFlags.Instance,
-                        null, CallingConventions.Standard,
-                        new[] { typeof(HttpSessionStateContainer) },
-                        null)
-                        .Invoke(new object[] { sessionContainer });
-            HttpContext.Current = httpContext;
-            var result =
-                controller.Register(new RegisterViewModel
-                {
-                    UserName = "adarsh",
-                    Password = "123456",
-                    ConfirmPassword = "123456"
-                }).Result;
-            Assert.IsNotNull(result);
-            var addedUser = userManager.FindByName("adarsh");
-            Assert.IsNotNull(addedUser);
-            Assert.AreEqual("adarsh", addedUser.UserName);
+            var result = controller.Register(new RegisterViewModel
+            {
+                UserName = "adarsh",
+                Password = "123456",
+                ConfirmPassword = "123456"
+            }).Result as RedirectToActionResult;
+
+            ClassicAssert.AreEqual("Index", result.ActionName);
+            ClassicAssert.AreEqual("adarsh", created.UserName);
+            signInManager.Verify(m => m.SignInAsync(created, false, null), Times.Once());
         }
 
          public ApplicationUser getApplicationUser()

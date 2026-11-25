@@ -1,5 +1,10 @@
-﻿using System;
-using System.Web.Mvc;
+﻿using SocialGoal.Tests.Helpers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using SocialGoal.Web.Helpers;
+using NUnit.Framework.Legacy;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,12 +12,10 @@ using SocialGoal.Data.Repository;
 using SocialGoal.Data.Infrastructure;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core;
 using SocialGoal.Web.ViewModels;
 using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Web.Controllers;
 using NUnit.Framework;
-using AutoMapper;
 using Moq;
 using System.Linq.Expressions;
 
@@ -82,12 +85,10 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
             groupRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Group, bool>>>())).Returns(fakeGroups);
 
-            Mapper.CreateMap<Goal, GoalViewModel>();
-            Mapper.CreateMap<Group, GroupViewModel>();
             SearchController controller = new SearchController(goalService, userService, groupService);
             ViewResult result = controller.SearchAll("a") as ViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(SearchViewModel),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(SearchViewModel),
             result.ViewData.Model, "Wrong View Model");
 
 

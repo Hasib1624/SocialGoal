@@ -1,5 +1,9 @@
-﻿using System;
-using System.Web.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using SocialGoal.Web.Helpers;
+using NUnit.Framework.Legacy;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,24 +11,17 @@ using SocialGoal.Data.Repository;
 using SocialGoal.Data.Infrastructure;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core;
 using SocialGoal.Web.ViewModels;
 using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Web.Controllers;
 using NUnit.Framework;
-using AutoMapper;
 using Moq;
-using Mvc.Mailer;
 using System.Security;
 using System.Security.Principal;
 using System.Threading;
-using SocialGoal.Web.Core.Models;
-using System.Web;
 using System.Linq.Expressions;
 using SocialGoal.Web.Mailers;
 using System.Net.Mail;
-using System.Web.Security;
-using SocialGoal.Web.Core.Authentication;
 using SocialGoal.Tests.Helpers;
 
 
@@ -67,17 +64,8 @@ namespace SocialGoal.Tests.Controllers
 
         Mock<IUnitOfWork> unitOfWork;
         Mock<IUserMailer> userMailer;
-        Mock<UserMailer> userMailerMock;
-        Mock<MailerBase> mailerBase;
 
-        Mock<ControllerContext> controllerContext;
-        Mock<IIdentity> identity;
-        Mock<IPrincipal> principal;
         // Mock<HttpContext> httpContext;
-        Mock<HttpContextBase> contextBase;
-        Mock<HttpRequestBase> httpRequest;
-        Mock<HttpResponseBase> httpResponse;
-        Mock<GenericPrincipal> genericPrincipal;
 
         //Mock<>
         [SetUp]
@@ -100,8 +88,6 @@ namespace SocialGoal.Tests.Controllers
             updateSupportRepository = new Mock<IUpdateSupportRepository>();
 
             userMailer = new Mock<IUserMailer>();
-            userMailerMock = new Mock<UserMailer>();
-            mailerBase = new Mock<MailerBase>();
             unitOfWork = new Mock<IUnitOfWork>();
 
             goalService = new GoalService(goalRepository.Object, followuserRepository.Object, unitOfWork.Object);
@@ -119,23 +105,13 @@ namespace SocialGoal.Tests.Controllers
             userProfileService = new UserProfileService(userProfileRepository.Object, unitOfWork.Object);
             updateSupportService = new UpdateSupportService(updateSupportRepository.Object, unitOfWork.Object);
 
-            MailerBase.IsTestModeEnabled = true;
-            userMailerMock.CallBase = true;
-
-            controllerContext = new Mock<ControllerContext>();
-            contextBase = new Mock<HttpContextBase>();
-            httpRequest = new Mock<HttpRequestBase>();
-            httpResponse = new Mock<HttpResponseBase>();
-            genericPrincipal = new Mock<GenericPrincipal>();
 
 
-            identity = new Mock<IIdentity>();
-            principal = new Mock<IPrincipal>();
+
         }
         [TearDown]
         public void TearDown()
         {
-            TestSmtpClient.SentMails.Clear();
         }
 
 
@@ -144,51 +120,22 @@ namespace SocialGoal.Tests.Controllers
         public void Index()
         {
 
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             Goal goal = new Goal()
             {
                 GoalId = 1,
@@ -207,55 +154,25 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
             goalStatusRepository.Setup(x => x.GetAll()).Returns(fake);
 
-            Mapper.CreateMap<Goal, GoalViewModel>();
 
             ViewResult result = controller.Index(1) as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(GoalViewModel), result.ViewData.Model, "WrongType");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(GoalViewModel), result.ViewData.Model, "WrongType");
             var data = result.ViewData.Model as GoalViewModel;
-            Assert.AreEqual("t", data.GoalName);
+            ClassicAssert.AreEqual("t", data.GoalName);
         }
 
         [Test]
         public void MyGoal_Test()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
+            controller.ControllerContext = Fakes.SignedIn();
 
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-            var formsAuthentication = new DefaultFormsAuthentication();
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
             IEnumerable<Goal> fake = new List<Goal> 
             {
             new Goal { GoalId=1,GoalName="Test1"},
@@ -267,13 +184,11 @@ namespace SocialGoal.Tests.Controllers
             goalRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Goal, bool>>>())).Returns(fake);
 
 
-            contextBase.Setup(x => x.User.Identity).Returns(identity.Object);
-            Mapper.CreateMap<Goal, GoalViewModel>();
             ViewResult result = controller.MyGoal() as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(typeof(IEnumerable<GoalViewModel>), result.ViewData.Model, "Wrong model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<GoalViewModel>), result.ViewData.Model, "Wrong model");
             var data = result.ViewData.Model as IEnumerable<GoalViewModel>;
-            Assert.AreEqual(4, data.Count(), "not matching");
+            ClassicAssert.AreEqual(4, data.Count(), "not matching");
         }
 
 
@@ -298,10 +213,10 @@ namespace SocialGoal.Tests.Controllers
 
             metricRepository.Setup(x => x.GetAll()).Returns(fakeMatrices);
             GoalFormModel goal = new GoalFormModel();
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.Create() as PartialViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(GoalFormModel),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(GoalFormModel),
                 result.ViewData.Model, "Wrong View Model");
 
 
@@ -309,10 +224,9 @@ namespace SocialGoal.Tests.Controllers
         [Test]
         public void Create_Goal()
         {
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
             // Act
-            Mapper.CreateMap<GoalFormModel, Goal>();
 
 
             GoalFormModel goal = new GoalFormModel()
@@ -327,8 +241,8 @@ namespace SocialGoal.Tests.Controllers
 
 
             };
-            var result = (RedirectToRouteResult)controller.Create(goal);
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            var result = (RedirectToActionResult)controller.Create(goal);
+            ClassicAssert.AreEqual("Index", result.ActionName);
 
 
         }
@@ -363,23 +277,21 @@ namespace SocialGoal.Tests.Controllers
 
             metricRepository.Setup(x => x.GetAll()).Returns(fakeMatrices);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            Mapper.CreateMap<Goal, GoalFormModel>();
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             ViewResult result = controller.Edit(1) as ViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(GoalFormModel),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(GoalFormModel),
                 result.ViewData.Model, "Wrong View Model");
             var data = result.ViewData.Model as GoalFormModel;
-            Assert.AreEqual("t", data.Desc);
+            ClassicAssert.AreEqual("t", data.Desc);
         }
 
         [Test]
         public void Edit_Goal_Post()
         {
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            Mapper.CreateMap<GoalFormModel, Goal>();
 
 
             GoalFormModel goal = new GoalFormModel()
@@ -392,8 +304,8 @@ namespace SocialGoal.Tests.Controllers
                 UserId = "402bd590-fdc7-49ad-9728-40efbfe512ec"
 
             };
-            var result = (RedirectToRouteResult)controller.Edit(goal);
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            var result = (RedirectToActionResult)controller.Edit(goal);
+            ClassicAssert.AreEqual("Index", result.ActionName);
 
 
 
@@ -414,9 +326,9 @@ namespace SocialGoal.Tests.Controllers
                 GoalStatusId = 1
             };
             goalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             string result = controller.GoalStatus(1, 1) as string;
-            Assert.AreEqual("InProgress", result);
+            ClassicAssert.AreEqual("InProgress", result);
         }
 
         [Test]
@@ -439,13 +351,13 @@ namespace SocialGoal.Tests.Controllers
 
             goalRepository.Setup(x => x.GetById(1)).Returns(fake);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             ViewResult result = controller.Delete(1) as ViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(Goal),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(Goal),
                  result.ViewData.Model, "Wrong View Model");
             var group = result.ViewData.Model as Goal;
-            Assert.AreEqual("test", group.Desc, "Got wrong Focus Description");
+            ClassicAssert.AreEqual("test", group.Desc, "Got wrong Focus Description");
 
         }
 
@@ -461,61 +373,32 @@ namespace SocialGoal.Tests.Controllers
 
             };
             goalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            var result = controller.DeleteConfirmed(1) as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
+            var result = controller.DeleteConfirmed(1) as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
 
         }
 
         [Test]
         public void MyGoals_test()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
 
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             IEnumerable<Goal> fake = new List<Goal> 
             {
             new Goal { GoalId=1,GoalName="Test1",UserId ="402bd590-fdc7-49ad-9728-40efbfe512ec",},
@@ -527,8 +410,8 @@ namespace SocialGoal.Tests.Controllers
             goalRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Goal, bool>>>())).Returns(fake);
 
             PartialViewResult result = controller.MyGoals() as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(IEnumerable<Goal>),
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<Goal>),
                 result.ViewData.Model, "Wrong View Model");
 
 
@@ -536,108 +419,50 @@ namespace SocialGoal.Tests.Controllers
         [Test]
         public void Goals_Following_Test()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
 
             PartialViewResult result = controller.GoalsFollowing() as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
         }
 
         [Test]
         public void Display_Updates_Test()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
 
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             Metric fakeMetric = new Metric()
             {
                 MetricId = 1,
@@ -658,11 +483,10 @@ namespace SocialGoal.Tests.Controllers
             
           }.AsEnumerable();
             updateRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Update, bool>>>())).Returns(updt);
-            Mapper.CreateMap<Update, UpdateViewModel>();
-            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult rslt = controller.DisplayUpdates(2) as PartialViewResult;
-            Assert.IsNotNull(rslt);
-            Assert.IsInstanceOf(typeof(UpdateListViewModel),
+            ClassicAssert.IsNotNull(rslt);
+            ClassicAssert.IsInstanceOf(typeof(UpdateListViewModel),
            rslt.ViewData.Model, "Wrong View Model");
 
 
@@ -685,63 +509,32 @@ namespace SocialGoal.Tests.Controllers
           
           }.AsEnumerable();
             supportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Support, bool>>>())).Returns(fake);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             ViewResult result = controller.Supporters(1) as ViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(GoalSupporterViewModel), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(GoalSupporterViewModel), result.ViewData.Model, "Wrong View Model");
 
         }
         [Test]
         public void Save_Update_Post()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
-            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            Mapper.CreateMap<UpdateFormModel, Update>();
-            Mapper.CreateMap<Update, UpdateViewModel>();
+
+
+
+            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
             Metric fakeMetric = new Metric()
             {
@@ -770,84 +563,55 @@ namespace SocialGoal.Tests.Controllers
             mock.GoalId = 1;
             mock.status=9;
             PartialViewResult result = controller.SaveUpdate(mock) as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(UpdateListViewModel), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UpdateListViewModel), result.ViewData.Model, "Wrong View Model");
         }
         [Test]
         public void Save_Update_Update_Mandatory_Test()
         {
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
             // The MVC pipeline doesn't run, so binding and validation don't run. 
             controller.ModelState.AddModelError("", "mock error message");
             UpdateFormModel update = new UpdateFormModel();
             update.Updatemsg = string.Empty;
-            var result = controller.SaveUpdate(update) as RedirectToRouteResult;
+            var result = controller.SaveUpdate(update) as RedirectToActionResult;
 
-            Assert.IsNull(result);
+            ClassicAssert.IsNull(result);
         }
 
         [Test]
         public void Invite_User()
         {
 
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
 
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = user.UserName,
-                RoleName = Enum.GetName(typeof(UserRoles), 0)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
 
 
             var userId = "402bd590-fdc7-49ad-9728-40efbfe512ec";
             var id = 1;
             PartialViewResult rslt = controller.InviteUser(id, userId) as PartialViewResult;
-            Assert.IsNotNull(rslt);
-            Assert.IsInstanceOf(typeof(ApplicationUser),
+            ClassicAssert.IsNotNull(rslt);
+            ClassicAssert.IsInstanceOf(typeof(ApplicationUser),
               rslt.ViewData.Model, "Wrong View Model");
             var userView = rslt.ViewData.Model as ApplicationUser;
-            Assert.AreEqual("adarsh@foo.com", userView.Email);
+            ClassicAssert.AreEqual("adarsh@foo.com", userView.Email);
 
         }
 
@@ -873,73 +637,42 @@ namespace SocialGoal.Tests.Controllers
             commentUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<CommentUser, bool>>>())).Returns(cmtuser);
             ApplicationUser applicationUser = getApplicationUser();
             userRepository.Setup(x => x.GetById("402bd590-fdc7-49ad-9728-40efbfe512ec")).Returns(applicationUser);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            Mapper.CreateMap<Comment, CommentsViewModel>();
             PartialViewResult rslt = controller.DisplayComments(1) as PartialViewResult;
-            Assert.IsNotNull(rslt, "View Result is null");
-            Assert.IsInstanceOf(typeof(IEnumerable<CommentsViewModel>),
+            ClassicAssert.IsNotNull(rslt, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<CommentsViewModel>),
              rslt.ViewData.Model, "Wrong View Model");
             var cmntsView = rslt.ViewData.Model as IEnumerable<CommentsViewModel>;
-            Assert.AreEqual(3, cmntsView.Count(), "Got wrong number of Comments");
+            ClassicAssert.AreEqual(3, cmntsView.Count(), "Got wrong number of Comments");
         }
         [Test]
         public void SaveComment()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
             // Act          
             CommentFormModel Cmnt = new CommentFormModel();
-            Mapper.CreateMap<CommentFormModel, Comment>();
             Cmnt.CommentText = "Mock";
-            var result = controller.SaveComment(Cmnt) as RedirectToRouteResult;
+            var result = controller.SaveComment(Cmnt) as RedirectToActionResult;
             // Assert 
-            Assert.AreEqual("DisplayComments", result.RouteValues["action"]);
+            ClassicAssert.AreEqual("DisplayComments", result.ActionName);
         }
 
         [Test]
@@ -955,61 +688,32 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             commentRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Comment, bool>>>())).Returns(cmnt);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             JsonResult count = controller.DisplayCommentCount(1) as JsonResult;
-            Assert.IsNotNull(count);
-            Assert.AreEqual(3, count.Data);
+            ClassicAssert.IsNotNull(count);
+            ClassicAssert.AreEqual(3, count.Value);
 
         }
 
         [Test]
         public void SearchGoalSearch_User_Which_Support_The_Goal()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
             IEnumerable<ApplicationUser> fakeUser = new List<ApplicationUser> {            
           new ApplicationUser{Activated=true,Email="user1@foo.com",FirstName="user1",LastName="user1",RoleId=0},
               new ApplicationUser{Activated=true,Email="user2@foo.com",FirstName="user2",LastName="user2",RoleId=0},
@@ -1021,64 +725,35 @@ namespace SocialGoal.Tests.Controllers
 
             var searchString = "e";
             JsonResult result = controller.SearchUser(searchString, 1);
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(JsonResult), result);
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(JsonResult), result);
 
         }
 
         [Test]
         public void Create_Support_Test()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
+
+
+
 
             //Act
-            var rslt = controller.SupportGoalNow(1) as RedirectToRouteResult;
-            Assert.AreEqual("Index", rslt.RouteValues["action"]);
+            var rslt = controller.SupportGoalNow(1) as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", rslt.ActionName);
         }
         [Test]
         public void Support_Invite_View_Returns_Test()
@@ -1089,10 +764,10 @@ namespace SocialGoal.Tests.Controllers
                 GoalId = 1
             };
             goalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.SupportInvitation(1) as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(Goal),
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(Goal),
            result.ViewData.Model, "Wrong View Model");
 
         }
@@ -1101,61 +776,31 @@ namespace SocialGoal.Tests.Controllers
         public void Invite_Email_Post()
         {
 
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
             userRepository.Setup(x => x.Get(It.IsAny<Expression<Func<ApplicationUser, bool>>>())).Returns(applicationUser);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
-
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
-
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
-
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
 
 
 
-            var mailMessage = new MvcMailMessage();
+
+
+
+
+
+
+            var mailMessage = new Mock<OutgoingMail>().Object;
             Guid goalIdToken = Guid.NewGuid();
 
 
             string email = "a@gmail.com";
 
             // userMailerMock.Setup(mailer => mailer.PopulateBody(It.IsAny<MvcMailMessage>(), "SupportGoal", null));
-            mailerBase.Setup(x => x.PopulateBody(It.IsAny<MailMessage>(), "SupportGoal", null));
 
             userMailer.Setup(x => x.Support(email, goalIdToken)).Returns(mailMessage);
 
@@ -1165,7 +810,7 @@ namespace SocialGoal.Tests.Controllers
             inviteEmail.Email = "a@gmail.com";
             inviteEmail.GrouporGoalId = 1;
             // string result = controller.InviteEmail(inviteEmail) as string;
-            //Assert.AreEqual("")
+            //ClassicAssert.AreEqual("")
         }
 
 
@@ -1178,9 +823,9 @@ namespace SocialGoal.Tests.Controllers
                 GoalId = 1
             };
             goalRepository.Setup(x => x.GetById(1)).Returns(goal);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             JsonResult reslt = controller.GetGoalReport(1) as JsonResult;
-            Assert.IsNotNull(reslt);
+            ClassicAssert.IsNotNull(reslt);
 
         }
 
@@ -1195,15 +840,15 @@ namespace SocialGoal.Tests.Controllers
           
           }.AsEnumerable();
             goalRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Goal, bool>>>())).Returns(fake);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
             // Act
             ViewResult result = controller.ListOfGoals() as ViewResult;
             // Assert
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
             var gol = result.ViewData.Model as IEnumerable<Goal>;
-            Assert.AreEqual(2, gol.Count(), "Got wrong number of Goals");
+            ClassicAssert.AreEqual(2, gol.Count(), "Got wrong number of Goals");
         }
 
         [Test]
@@ -1215,12 +860,12 @@ namespace SocialGoal.Tests.Controllers
           
           }.AsEnumerable();
             goalRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Goal, bool>>>())).Returns(fake);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.Goalslist(0, 0) as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(IEnumerable<Goal>), result.ViewData.Model, "Wrong View Model");
             var gol = result.ViewData.Model as IEnumerable<Goal>;
-            Assert.AreEqual(2, gol.Count(), "Got wrong number of Goals");
+            ClassicAssert.AreEqual(2, gol.Count(), "Got wrong number of Goals");
         }
 
         [Test]
@@ -1236,69 +881,37 @@ namespace SocialGoal.Tests.Controllers
             };
             updateRepository.Setup(x => x.GetById(1)).Returns(update);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            Mapper.CreateMap<Update, UpdateFormModel>();
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.EditUpdate(1) as PartialViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(UpdateFormModel),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(UpdateFormModel),
                 result.ViewData.Model, "Wrong View Model");
             var data = result.ViewData.Model as UpdateFormModel;
-            Assert.AreEqual("abc", data.Updatemsg);
+            ClassicAssert.AreEqual("abc", data.Updatemsg);
         }
 
 
         [Test]
         public void Edit_Update_Post()
         {
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
 
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
-            principal.SetupGet(x => x.Identity.Name).Returns("adarsh");
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            string[] userRoles = { goalsetterUser.RoleName };
 
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
-            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            Mapper.CreateMap<UpdateFormModel, Update>();
-            Mapper.CreateMap<Update, UpdateViewModel>();
+
+
+
+            //GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
 
             Metric fakeMetric = new Metric()
             {
@@ -1326,8 +939,8 @@ namespace SocialGoal.Tests.Controllers
             mock.GoalId = 1;
             mock.status = 34;
             PartialViewResult result = controller.EditUpdate(mock) as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(UpdateListViewModel),
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UpdateListViewModel),
             result.ViewData.Model, "Wrong View Model");
         }
 
@@ -1344,13 +957,13 @@ namespace SocialGoal.Tests.Controllers
             };
             updateRepository.Setup(x => x.GetById(1)).Returns(update);
 
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.DeleteUpdate(1) as PartialViewResult;
-            Assert.IsNotNull(result, "View Result is null");
-            Assert.IsInstanceOf(typeof(Update),
+            ClassicAssert.IsNotNull(result, "View Result is null");
+            ClassicAssert.IsInstanceOf(typeof(Update),
                  result.ViewData.Model, "Wrong View Model");
             var group = result.ViewData.Model as Update;
-            Assert.AreEqual("abc", group.Updatemsg, "Got wrong message");
+            ClassicAssert.AreEqual("abc", group.Updatemsg, "Got wrong message");
 
         }
 
@@ -1366,9 +979,9 @@ namespace SocialGoal.Tests.Controllers
 
             };
             updateRepository.Setup(x => x.GetById(1)).Returns(update);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
-            var result = controller.DeleteConfirmedUpdate(1) as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
+            var result = controller.DeleteConfirmedUpdate(1) as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
 
         }
 
@@ -1386,10 +999,10 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             updateSupportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<UpdateSupport, bool>>>())).Returns(updtsprt);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             int count = controller.NoOfSupports(1);
-            Assert.IsNotNull(count);
-            Assert.AreEqual("3", count.ToString());
+            ClassicAssert.IsNotNull(count);
+            ClassicAssert.AreEqual("3", count.ToString());
 
         }
 
@@ -1407,10 +1020,10 @@ namespace SocialGoal.Tests.Controllers
           }.AsEnumerable();
 
             updateSupportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<UpdateSupport, bool>>>())).Returns(updtsprt);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             JsonResult count = controller.DisplayUpdateSupportCount(1) as JsonResult;
-            Assert.IsNotNull(count);
-            Assert.AreEqual(3, count.Data);
+            ClassicAssert.IsNotNull(count);
+            ClassicAssert.AreEqual(3, count.Value);
 
         }
 
@@ -1431,10 +1044,10 @@ namespace SocialGoal.Tests.Controllers
           
           }.AsEnumerable();
             updateSupportRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<UpdateSupport, bool>>>())).Returns(fake);
-            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService);
+            GoalController controller = new GoalController(goalService, metricService, focusService, supportService, updateService, commentService, userService, securityTokenService, supportInvitationService, goalStatusService, commentUserService, updateSupportService, userMailer.Object);
             PartialViewResult result = controller.SupportersOfUpdate(1) as PartialViewResult;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOf(typeof(UpdateSupportersViewModel), result.ViewData.Model, "Wrong View Model");
+            ClassicAssert.IsNotNull(result);
+            ClassicAssert.IsInstanceOf(typeof(UpdateSupportersViewModel), result.ViewData.Model, "Wrong View Model");
 
         }
 
