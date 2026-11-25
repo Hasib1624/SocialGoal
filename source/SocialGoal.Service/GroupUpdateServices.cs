@@ -3,7 +3,6 @@ using System.Linq;
 using SocialGoal.Data;
 using SocialGoal.Data.Infrastructure;
 using SocialGoal.Model.Models;
-using SocialGoal.Web.Core.Models;
 using SocialGoal.Data.Repository;
 using System;
 

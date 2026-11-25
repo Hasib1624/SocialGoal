@@ -16,7 +16,7 @@
 else
 {
     <div id="NotificationContainer" class="alert alert-info">
-        @Html.Partial("_NotificationList", Model)
+        @await Html.PartialAsync("_NotificationList", Model)
     </div>
     if (Model.Count() == 10)
     {

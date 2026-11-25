@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNet.Identity
-@model SocialGoal.Web.ViewModels.GroupViewModel
+﻿@model SocialGoal.Web.ViewModels.GroupViewModel
 @{
     ViewBag.Title = "Index";
     //Layout = "~/Views/Shared/_PageLayout.cshtml";
@@ -48,7 +47,7 @@
             }
             @if (Model.IsAMember == true)
             {       
-                @Html.Partial("Header")        
+                @await Html.PartialAsync("Header")        
             }
         </div>
 </div>

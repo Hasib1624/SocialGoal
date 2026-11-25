@@ -9,7 +9,7 @@
     <h4>
         Create Group Goal
     </h4>
-    @Html.Partial("Header")
+    @await Html.PartialAsync("Header")
     <br />
     <div id="createGoal" class="well span8">
         @using (Html.BeginForm("CreateGoal", "Group"))

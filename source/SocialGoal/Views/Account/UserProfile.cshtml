@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNet.Identity
-@model SocialGoal.Web.ViewModels.UserProfileViewModel
+﻿@model SocialGoal.Web.ViewModels.UserProfileViewModel
 @{
     ViewBag.Title = "UserProfileView";
     Layout = "~/Views/Shared/_PageLayout.cshtml";
@@ -59,7 +58,7 @@
             
 
                @* <div class ="span6" style ="float:right" id ="divChangePassword">
-			@Ajax.ActionLink("ChangePassword", "ChangePassword", "Account", new AjaxOptions { UpdateTargetId = "divChangePassword"})
+			<a data-ajax="true" data-ajax-mode="replace" data-ajax-update="#divChangePassword" href="@Url.Action("ChangePassword", "Account")">ChangePassword</a>
 			</div>*@
        
         
@@ -247,7 +246,7 @@
                     </table>
                 </div>
             }
-@*   @Html.Action("UserDetail", "Account", new { id = Model.UserId })*@
+@*   @(await Html.ChildActionAsync<AccountController>(c => c.UserDetail(Model.UserId)))*@
         
     </div >
     <div class="well span6" style="float:right;">
@@ -257,7 +256,7 @@
         { 
             <div id="divusernotification" class="span12" style="height: 550px; overflow-y: hidden; outline: none;" tabindex="5002">
             
-                @Html.Action("UserNotification", "Home", new { id = Model.UserId })
+                @(await Html.ChildActionAsync<HomeController>(c => c.UserNotification(Model.UserId)))
             </div>
         }
      

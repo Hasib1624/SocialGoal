@@ -1,21 +1,22 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Entity.ModelConfiguration;
 using SocialGoal.Model.Models;
 
 
 namespace SocialGoal.Data.Configuration
 {
-    public class UpdateConfiguration:EntityTypeConfiguration<Update>
+    public class UpdateConfiguration : IEntityTypeConfiguration<Update>
     {
-        public UpdateConfiguration()
+        public void Configure(EntityTypeBuilder<Update> builder)
         {
-            Property(u => u.Updatemsg).IsMaxLength();
-            Property(u => u.GoalId).IsRequired();
-            Property(u => u.UpdateDate).IsRequired();
+            builder.Property(u => u.Updatemsg);
+            builder.Property(u => u.GoalId).IsRequired();
+            builder.Property(u => u.UpdateDate).IsRequired();
 
         }
     }

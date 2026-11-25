@@ -1,22 +1,23 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Entity.ModelConfiguration;
 using SocialGoal.Model.Models;
 
 namespace SocialGoal.Data.Configuration
 {
-    public class SupportInvitationConfiguration:EntityTypeConfiguration<SupportInvitation>
+    public class SupportInvitationConfiguration : IEntityTypeConfiguration<SupportInvitation>
     {
-        public SupportInvitationConfiguration()
+        public void Configure(EntityTypeBuilder<SupportInvitation> builder)
         {
-            Property(s => s.GoalId).IsRequired();
-            Property(s => s.SentDate).IsRequired();
-            Property(s => s.Accepted).IsRequired();
-            Property(s => s.FromUserId).IsMaxLength();
-            Property(s => s.ToUserId).IsMaxLength();
+            builder.Property(s => s.GoalId).IsRequired();
+            builder.Property(s => s.SentDate).IsRequired();
+            builder.Property(s => s.Accepted).IsRequired();
+            builder.Property(s => s.FromUserId);
+            builder.Property(s => s.ToUserId);
         }
     }
 }

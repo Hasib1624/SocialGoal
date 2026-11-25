@@ -1,5 +1,9 @@
-﻿using System;
-using System.Web.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using SocialGoal.Web.Helpers;
+using NUnit.Framework.Legacy;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,21 +11,14 @@ using SocialGoal.Data.Repository;
 using SocialGoal.Data.Infrastructure;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core;
 using SocialGoal.Web.ViewModels;
 using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Web.Controllers;
 using NUnit.Framework;
-using AutoMapper;
 using Moq;
 using System.Linq.Expressions;
 using System.Security.Principal;
-using System.Web;
-using SocialGoal.Web.Core.Authentication;
-using System.Web.Security;
-using SocialGoal.Web.Core.Models;
 using System.IO;
-using System.Web.SessionState;
 using System.Reflection;
 using SocialGoal.Tests.Helpers;
 
@@ -37,19 +34,10 @@ namespace SocialGoal.Tests.Controllers
         Mock<IGroupInvitationRepository> groupInvitationRepository;
         Mock<IUserRepository> userRepository;
         Mock<IFollowUserRepository> followUserRepository;
-        Mock<UserProfileRepository> userProfileRepository;
 
 
         Mock<IUnitOfWork> unitOfWork;
 
-        Mock<TempDataDictionary> tempData;
-        Mock<ControllerContext> controllerContext;
-        Mock<IIdentity> identity;
-        Mock<IPrincipal> principal;
-        Mock<HttpContextBase> contextBase;
-        Mock<HttpRequestBase> httpRequest;
-        Mock<HttpResponseBase> httpResponse;
-        Mock<GenericPrincipal> genericPrincipal;
 
         public ISecurityTokenService securityTokenService;
         public IGroupUserService groupUserService;
@@ -71,14 +59,6 @@ namespace SocialGoal.Tests.Controllers
 
             unitOfWork = new Mock<IUnitOfWork>();
 
-            tempData = new Mock<TempDataDictionary>();
-            controllerContext = new Mock<ControllerContext>();
-            contextBase = new Mock<HttpContextBase>();
-            principal = new Mock<IPrincipal>();
-            identity = new Mock<IIdentity>();
-            httpRequest = new Mock<HttpRequestBase>();
-            httpResponse = new Mock<HttpResponseBase>();
-            genericPrincipal = new Mock<GenericPrincipal>();
 
             securityTokenService = new SecurityTokenService(securityTokenRepository.Object, unitOfWork.Object);
             groupInvitationService = new GroupInvitationService(groupInvitationRepository.Object, unitOfWork.Object);
@@ -105,77 +85,29 @@ namespace SocialGoal.Tests.Controllers
 
             securityTokenRepository.Setup(x => x.Get(It.IsAny<Expression<Func<SecurityToken, bool>>>())).Returns(token);
 
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
             EmailRequestController controller = new EmailRequestController(securityTokenService, groupUserService, supportService, groupInvitationService);
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
 
-            var httprequest = new HttpRequest("", "http://yoursite/", "");
-            var stringWriter = new StringWriter();
-            var httpResponce = new HttpResponse(stringWriter);
-            var httpContext = new HttpContext(httprequest, httpResponce);
 
-            var sessionContainer = new HttpSessionStateContainer("id",
-                                    new SessionStateItemCollection(),
-                                    new HttpStaticObjectsCollection(),
-                                    10,
-                                    true,
-                                    HttpCookieMode.AutoDetect,
-                                    SessionStateMode.InProc,
-                                    false);
 
-            httpContext.Items["AspSession"] = typeof(HttpSessionState).GetConstructor(
-                        BindingFlags.NonPublic | BindingFlags.Instance,
-                        null, CallingConventions.Standard,
-                        new[] { typeof(HttpSessionStateContainer) },
-                        null)
-                        .Invoke(new object[] { sessionContainer });
 
-            HttpContext.Current = httpContext;
+            SocialGoalSessionFacade.Accessor = Fakes.Accessor();
             //HttpContext.Current.Request.Session["somevalue"];
 
-            controller.TempData = tempData.Object;
+            controller.TempData = Fakes.TempData();
             controller.TempData["grToken"] = guidToken;
-            var result = controller.AddGroupUser() as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            var result = controller.AddGroupUser() as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
         }
 
         [Test]
@@ -192,76 +124,28 @@ namespace SocialGoal.Tests.Controllers
 
             securityTokenRepository.Setup(x => x.Get(It.IsAny<Expression<Func<SecurityToken, bool>>>())).Returns(token);
 
-            MemoryUser user = new MemoryUser("adarsh");
             ApplicationUser applicationUser = getApplicationUser();
-            var userContext = new UserInfo
-            {
-                UserId = user.Id,
-                DisplayName = user.UserName,
-                UserIdentifier = applicationUser.Email,
-                RoleName = Enum.GetName(typeof(UserRoles), applicationUser.RoleId)
-            };
-            var testTicket = new FormsAuthenticationTicket(
-                1,
-                user.Id,
-                DateTime.Now,
-                DateTime.Now.Add(FormsAuthentication.Timeout),
-                false,
-                userContext.ToString());
 
 
 
             EmailRequestController controller = new EmailRequestController(securityTokenService, groupUserService, supportService, groupInvitationService);
 
-            controllerContext.SetupGet(x => x.HttpContext.User).Returns(principal.Object);
-            controllerContext.SetupGet(p => p.HttpContext.Request.IsAuthenticated).Returns(true);
-            controller.ControllerContext = controllerContext.Object;
-
-            contextBase.SetupGet(x => x.Request).Returns(httpRequest.Object);
-            contextBase.SetupGet(x => x.Response).Returns(httpResponse.Object);
-            genericPrincipal.Setup(x => x.Identity).Returns(identity.Object);
-
-            contextBase.SetupGet(a => a.Response.Cookies).Returns(new HttpCookieCollection());
-
-            var formsAuthentication = new DefaultFormsAuthentication();
+            controller.ControllerContext = Fakes.SignedIn();
 
 
 
-            formsAuthentication.SetAuthCookie(contextBase.Object, testTicket);
 
-            HttpCookie authCookie = contextBase.Object.Response.Cookies[FormsAuthentication.FormsCookieName];
 
-            var ticket = formsAuthentication.Decrypt(authCookie.Value);
-            var goalsetterUser = new SocialGoalUser(ticket);
-            principal.Setup(x => x.Identity).Returns(goalsetterUser);
 
-            var httprequest = new HttpRequest("", "http://yoursite/", "");
-            var stringWriter = new StringWriter();
-            var httpResponce = new HttpResponse(stringWriter);
-            var httpContext = new HttpContext(httprequest, httpResponce);
 
-            var sessionContainer = new HttpSessionStateContainer("id",
-                                    new SessionStateItemCollection(),
-                                    new HttpStaticObjectsCollection(),
-                                    10,
-                                    true,
-                                    HttpCookieMode.AutoDetect,
-                                    SessionStateMode.InProc,
-                                    false);
 
-            httpContext.Items["AspSession"] = typeof(HttpSessionState).GetConstructor(
-                        BindingFlags.NonPublic | BindingFlags.Instance,
-                        null, CallingConventions.Standard,
-                        new[] { typeof(HttpSessionStateContainer) },
-                        null)
-                        .Invoke(new object[] { sessionContainer });
 
-            HttpContext.Current = httpContext;
+            SocialGoalSessionFacade.Accessor = Fakes.Accessor();
 
-            controller.TempData = tempData.Object;
+            controller.TempData = Fakes.TempData();
             controller.TempData["goToken"] = guidToken;
-            var result = controller.AddSupportToGoal() as RedirectToRouteResult;
-            Assert.AreEqual("Index", result.RouteValues["action"]);
+            var result = controller.AddSupportToGoal() as RedirectToActionResult;
+            ClassicAssert.AreEqual("Index", result.ActionName);
         }
 
         public ApplicationUser getApplicationUser()

@@ -16,7 +16,7 @@
 else
 {
     <div id="followerscontainer">
-        @Html.Partial("_FollowersView",Model)
+        @await Html.PartialAsync("_FollowersView",Model)
     </div>
     if (Model.Count() >=10)
     {

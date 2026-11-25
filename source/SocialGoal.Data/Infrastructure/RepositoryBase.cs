@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using PagedList;
+using X.PagedList;
 using SocialGoal.Data.Models;
 
 namespace SocialGoal.Data.Infrastructure
@@ -11,7 +11,7 @@ namespace SocialGoal.Data.Infrastructure
     public abstract class RepositoryBase<T> where T : class
     {
         private SocialGoalEntities dataContext;
-        private readonly IDbSet<T> dbset;
+        private readonly DbSet<T> dbset;
         protected RepositoryBase(IDatabaseFactory databaseFactory)
         {
             DatabaseFactory = databaseFactory;
@@ -34,7 +34,6 @@ namespace SocialGoal.Data.Infrastructure
         }
         public virtual void Update(T entity)
         {
-            dbset.Attach(entity);
             dataContext.Entry(entity).State = EntityState.Modified;
         }
         public virtual void Delete(T entity)
@@ -43,11 +42,11 @@ namespace SocialGoal.Data.Infrastructure
         }
         public virtual void Delete(Expression<Func<T, bool>> where)
         {
-            IEnumerable<T> objects = dbset.Where<T>(where).AsEnumerable();
+            IEnumerable<T> objects = dbset.Where(where).ToList();
             foreach (T obj in objects)
                 dbset.Remove(obj);
         }
-        public virtual T GetById(long id)
+        public virtual T GetById(int id)
         {
             return dbset.Find(id);
         }

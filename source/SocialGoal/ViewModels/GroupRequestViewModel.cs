@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using SocialGoal.Model.Models;
 
 namespace SocialGoal.Web.ViewModels

@@ -1,7 +1,8 @@
 ﻿@{
     ViewBag.Title = "Header";
 
-    var not = Html.Action("GetNumberOfRequests", "Group", new { id = Model.GroupId });
+    int groupId = Model.GroupId;
+    var not = await Html.ChildActionAsync<GroupController>(c => c.GetNumberOfRequests(groupId));
 }
 
     <div class="btn-group" style="float: right">

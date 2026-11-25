@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace SocialGoal.Web.Helpers
 {
@@ -9,28 +6,31 @@ namespace SocialGoal.Web.Helpers
     {
         private const string joinGroupOrGoal = "JoinGroupOrGoal";
 
+        public static IHttpContextAccessor Accessor { get; set; }
+
+        private static ISession Session => Accessor.HttpContext.Session;
 
         public static string JoinGroupOrGoal
         {
-            get
-            {
-                return (string)HttpContext.Current.Session[joinGroupOrGoal];
-            }
-
+            get { return Session.GetString(joinGroupOrGoal); }
             set
             {
-                HttpContext.Current.Session[joinGroupOrGoal] = value;
+                if (value == null)
+                    Session.Remove(joinGroupOrGoal);
+                else
+                    Session.SetString(joinGroupOrGoal, value);
             }
         }
 
         public static void Remove(string sessionVariable)
         {
-            HttpContext.Current.Session.Remove(sessionVariable);
+            if (sessionVariable != null)
+                Session.Remove(sessionVariable);
         }
 
         public static void Clear()
         {
-            HttpContext.Current.Session.Clear();
+            Session.Clear();
         }
     }
 }

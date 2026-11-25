@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNet.Identity
-@model SocialGoal.Web.ViewModels.UpdateListViewModel
+﻿@model SocialGoal.Web.ViewModels.UpdateListViewModel
     
 @if (Model.Updates.Count() == 0)
 {
@@ -43,11 +42,11 @@ else
             }
 
             @{
-            var supportCount = Html.Action("NoOfSupports", new { id = item.UpdateId });
-            var commentCount = Html.Action("NoOfComments", new { id = item.UpdateId });
+            var supportCount = await Html.ChildActionAsync<GoalController>(c => c.NoOfSupports(item.UpdateId));
+            var commentCount = await Html.ChildActionAsync<GoalController>(c => c.NoOfComments(item.UpdateId));
              }
           
-             @if (supportCount.ToHtmlString() != "0")
+             @if (supportCount.ToString() != "0")
              {
                 <a data-toggle="modal" href="#updateSupporters" id ="SupportCount@(item.UpdateId)" onclick="SupportersOfUpdate('@item.UpdateId')">@supportCount Supports<i class="icon-thumbs-up"></i></a> <text> | </text>
              }
@@ -55,7 +54,7 @@ else
              {
                 <a data-toggle="modal" href="#updateSupporters" id ="SupportCount@(item.UpdateId)" onclick="SupportersOfUpdate('@item.UpdateId')">0 Supports</a> <text> | </text>
              }
-             @if (commentCount.ToHtmlString() != "0")
+             @if (commentCount.ToString() != "0")
              {
                 <a href="JavaScript:void(0);" id="commentToggle@(item.UpdateId)" onclick = "CommentExpandInUpdate(@item.UpdateId,'@commentCount')" title="Comment this update"> @commentCount Comments<i class="icon-comment"></i> </a>
              }
@@ -112,7 +111,7 @@ else
                 {
                     
                     <div class="progress progress-striped active" style="height:25px;width:150px;border:1px solid #B6B4B4;">
-                        <div class="bar" style="color:Black;width:@Html.Action("GoalProgress", "Goal", new { id = item.UpdateId })%;">
+                        <div class="bar" style="color:Black;width:@(await Html.ChildActionAsync<GoalController>(c => c.GoalProgress(item.UpdateId)))%;">
                            @if (item.status < Model.Target)
                            {<span style="float:left;line-height:25px;padding-left:10px;" >@item.status/@Model.Target</span>}
                            else

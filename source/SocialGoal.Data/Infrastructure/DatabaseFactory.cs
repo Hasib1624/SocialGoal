@@ -2,17 +2,19 @@
 
 namespace SocialGoal.Data.Infrastructure
 {
-public class DatabaseFactory : Disposable, IDatabaseFactory
-{
-    private SocialGoalEntities dataContext;
-    public SocialGoalEntities Get()
+    // The DI container owns the context's lifetime.
+    public class DatabaseFactory : Disposable, IDatabaseFactory
     {
-        return dataContext ?? (dataContext = new SocialGoalEntities());
+        private readonly SocialGoalEntities dataContext;
+
+        public DatabaseFactory(SocialGoalEntities dataContext)
+        {
+            this.dataContext = dataContext;
+        }
+
+        public SocialGoalEntities Get()
+        {
+            return dataContext;
+        }
     }
-    protected override void DisposeCore()
-    {
-        if (dataContext != null)
-            dataContext.Dispose();
-    }
-}
 }

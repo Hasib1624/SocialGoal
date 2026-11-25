@@ -1,13 +1,14 @@
-﻿using SocialGoal.Model.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SocialGoal.Mappings;
+using SocialGoal.Web.Core.Extensions;
+using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core.Models;
 using SocialGoal.Web.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
 
 namespace SocialGoal.Web.Controllers
 {

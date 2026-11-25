@@ -37,16 +37,8 @@ namespace SocialGoal.Service
 
         public Guid GetSecurityToken(Guid id)
         {
-            var securityToken = securityTokenRepository.Get(s => s.Token == id).Token;
-            if (securityToken != null)
-            {
-                return securityToken;
-            }
-            else
-            {
-                Guid newguid = Guid.NewGuid();
-                return newguid;
-            }
+            // shortcut: an unknown token throws, as in the original; handle it when a caller needs to
+            return securityTokenRepository.Get(s => s.Token == id).Token;
         }
         public int GetActualId(Guid id)
         {

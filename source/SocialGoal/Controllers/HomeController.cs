@@ -1,13 +1,14 @@
-﻿using SocialGoal.Service;
-using SocialGoal.Web.Core.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SocialGoal.Mappings;
+using SocialGoal.Web.Core.Extensions;
+using SocialGoal.Service;
 using SocialGoal.Web.Services;
 using SocialGoal.Web.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
 
 namespace SocialGoal.Controllers
 {
@@ -71,7 +72,7 @@ namespace SocialGoal.Controllers
                 if (dashboard.Count != 0)
                     return PartialView("Notification", dashboard);
                 else
-                    return null;
+                    return new EmptyResult();
             }
             return View(dashboard);
         }
@@ -115,6 +116,7 @@ namespace SocialGoal.Controllers
         /// <param name="?"></param>
         /// <param name="?"></param>
         /// <returns></returns>
+        [NonAction]
         public IEnumerable<NotificationsViewModel> GetNotifications(int page, int noOfRecords)
         {
             var notifications = notificationListCreation.GetNotifications(User.Identity.GetUserId(), goalService, commentService, updateService, supportService, userService, groupService, groupUserService, groupGoalService, groupcommentService, groupupdateService, followUserService, groupCommentUserService, commentUserService, groupUpdateUserService);
@@ -125,6 +127,7 @@ namespace SocialGoal.Controllers
             return notifications;
         }
 
+        [NonAction]
         public IEnumerable<NotificationsViewModel> GetNotifications(string userid)
         {
 

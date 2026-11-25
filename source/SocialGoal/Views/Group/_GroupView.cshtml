@@ -16,7 +16,7 @@
                     
                             @Html.ActionLink(item.GroupName/*.LimitLength(20)*/, "Index", "Group", new { id = item.GroupId },  new { @title = item.GroupName })
                             @{
-            var not = Html.Action("GetNumberOfRequests", "Group", new { id = item.GroupId });
+            var not = await Html.ChildActionAsync<GroupController>(c => c.GetNumberOfRequests(item.GroupId));
             if (not.ToString() != "0")
             {
                                 <sub><span class="badge badge-important">@not</span></sub>

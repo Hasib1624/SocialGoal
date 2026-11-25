@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SocialGoal.Data.Repository;
 using SocialGoal.Data.Models;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System;
 namespace SocialGoal.Data.Repository
 {

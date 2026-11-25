@@ -1,27 +1,20 @@
-﻿using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SocialGoal.Model.Models;
-using Microsoft.AspNet.Identity.EntityFramework;
-using System.ComponentModel.DataAnnotations;
-using System;
-using System.Collections.Generic;
-using SocialGoal.Data.Configuration;
-using System.Reflection;
 
 namespace SocialGoal.Data.Models
 {
     public class SocialGoalEntities : IdentityDbContext<ApplicationUser>
     {
-
-        public SocialGoalEntities()
-            : base("SocialGoalEntities")
+        public SocialGoalEntities(DbContextOptions<SocialGoalEntities> options)
+            : base(options)
         {
         }
         public DbSet<Goal> Goals { get; set; }
         public DbSet<Focus> Focuses { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Update> Updates { get; set; }
-        //public DbSet<User> Users { get; set; }
         public DbSet<Metric> Metrics { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupUser> GroupUsers { get; set; }
@@ -42,42 +35,22 @@ namespace SocialGoal.Data.Models
         public DbSet<CommentUser> CommentUsers { get; set; }
         public DbSet<UpdateSupport> UpdateSupports { get; set; }
         public DbSet<GroupUpdateSupport> GroupUpdateSupports { get; set; }
-   
 
         public virtual void Commit()
         {
-            base.SaveChanges();
+            SaveChanges();
         }
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Conventions.Remove<IncludeMetadataConvention>();
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(SocialGoalEntities).Assembly);
 
-            modelBuilder.Configurations.Add(new CommentConfiguration());
-            modelBuilder.Configurations.Add(new CommentUserConfiguration());
-            modelBuilder.Configurations.Add(new FocusConfiguration());
-            modelBuilder.Configurations.Add(new FollowRequestConfiguration());
-            modelBuilder.Configurations.Add(new FollowUserConfiguration());
-            modelBuilder.Configurations.Add(new GoalConfiguration());
-            modelBuilder.Configurations.Add(new GoalStatusConfiguration());
-            modelBuilder.Configurations.Add(new GroupCommentConfiguration());
-            modelBuilder.Configurations.Add(new GroupCommentUserConfguration());
-            modelBuilder.Configurations.Add(new GroupConfiguration());
-            modelBuilder.Configurations.Add(new GroupGoalConfiguration());
-            modelBuilder.Configurations.Add(new GroupInvitationConfiguration());
-            modelBuilder.Configurations.Add(new GroupRequestConfiguration());
-            modelBuilder.Configurations.Add(new GroupUpdateSupportConfiguration());
-            modelBuilder.Configurations.Add(new GroupUpdateUserConfiguration());
-            modelBuilder.Configurations.Add(new GroupUserConfiguration());
-            modelBuilder.Configurations.Add(new MetricConfiguration());
-            modelBuilder.Configurations.Add(new RegistrationTokenConfiguration());
-            modelBuilder.Configurations.Add(new SupportConfiguration());
-            modelBuilder.Configurations.Add(new SupportInvitationConfiguration());
-            modelBuilder.Configurations.Add(new UpdateConfiguration());
-            modelBuilder.Configurations.Add(new UpdateSupportConfiguration());
-            modelBuilder.Configurations.Add(new UserProfileConfiguration());
-
+            // Lookup rows, same ids as the original's seed order.
+            string[] metrics = { "%", "$", "$ M", "Rs", "Hours", "Km", "Kg", "Years" };
+            modelBuilder.Entity<Metric>().HasData(metrics.Select((type, i) => new Metric { MetricId = i + 1, Type = type }));
+            string[] statuses = { "In Progress", "On Hold", "Completed" };
+            modelBuilder.Entity<GoalStatus>().HasData(statuses.Select((type, i) => new GoalStatus { GoalStatusId = i + 1, GoalStatusType = type }));
         }
     }
 }
