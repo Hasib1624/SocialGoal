@@ -1,6 +1,9 @@
 using System.Net;
 using NUnit.Framework;
+using SocialGoal.Mappings;
+using SocialGoal.Model.Models;
 using SocialGoal.Web.Services;
+using SocialGoal.Web.ViewModels;
 
 namespace SocialGoal.Tests
 {
@@ -32,6 +35,10 @@ namespace SocialGoal.Tests
         [TestCase("1 < 2 & 3 <= 4", false)]
         public void Markup_in_input_is_detected(string value, bool dangerous) =>
             Assert.That(RequestValidation.IsDangerous(value), Is.EqualTo(dangerous));
+
+        [Test]
+        public void Mapping_a_missing_record_gives_null() =>
+            Assert.That(Mapper.Map<Goal, GoalFormModel>(null), Is.Null);
 
         [Test]
         public void Cropper_refuses_data_that_is_not_an_image() =>

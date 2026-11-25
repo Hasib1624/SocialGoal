@@ -47,7 +47,11 @@ namespace SocialGoal.Web.Mailers
             // links come from configuration, not the Host header, so a forged request cannot redirect tokens
             viewData["BaseUrl"] = mail["BaseUrl"]?.TrimEnd('/');
             if (key != null)
+            {
+                if (string.IsNullOrEmpty(mail["BaseUrl"]))
+                    throw new InvalidOperationException("Mail:BaseUrl must be set to send mails with links.");
                 viewData[key] = value;
+            }
 
             var message = new OutgoingMail(mail, environment.ContentRootPath, logger)
             {

@@ -15,7 +15,11 @@ namespace SocialGoal.Mappings
     [Mapper(ThrowOnPropertyMappingNullMismatch = false, RequiredMappingStrategy = RequiredMappingStrategy.None)]
     public static partial class Mapper
     {
-        public static partial TTarget Map<TSource, TTarget>(TSource source);
+        // a missing record maps to null, as AutoMapper did, so actions can still answer 404
+        public static TTarget Map<TSource, TTarget>(TSource source) =>
+            source is null ? default! : MapCore<TSource, TTarget>(source);
+
+        private static partial TTarget MapCore<TSource, TTarget>(TSource source);
 
         // domain -> view model
         private static partial GoalViewModel ToView(Goal source);

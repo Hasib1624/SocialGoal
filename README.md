@@ -44,8 +44,8 @@ Configuration (environment variables or `dotnet user-secrets`):
 | Key | Purpose |
 |---|---|
 | `Authentication:Google:ClientId` / `ClientSecret` | Google sign-in. Development uses placeholders; the button is hidden when empty |
-| `Mail:Host`, `Port`, `UserName`, `Password`, `From` | SMTP. Without a host, mails are written to `source/SocialGoal/App_Data/mail` |
-| `Mail:BaseUrl` | Public address used in mailed links. **Set this in any deployment** |
+| `Mail:Host`, `Port`, `EnableSsl`, `UserName`, `Password`, `From` | SMTP (TLS on by default). Without a host, mails are written to `source/SocialGoal/App_Data/mail` |
+| `Mail:BaseUrl` | Public address used in mailed links. **Required outside Development**; invitations fail without it |
 
 Tests:
 
@@ -75,6 +75,7 @@ fails.
 - Child actions (`Html.Action`) are run by a small helper (`Helpers/ChildActionExtensions.cs`) rather than
   rewritten as view components. Action filters do not run for them.
 - Helper methods that were public on controllers are no longer reachable by URL.
+- AJAX requests without a valid session get 401 instead of a redirect to the login page.
 - The error page is plain; exception messages appear only in Development.
 
 Security
@@ -87,7 +88,7 @@ Changed in the port:
   fetched any URL: server-side request forgery). Size and dimensions are limited, and non-images are rejected.
 - Replacing a picture only deletes a previous upload.
 - Mailed links use the configured address, not the request's Host header.
-- ASP.NET request validation does not exist in ASP.NET Core; a replacement rejects markup in query and form values.
+- ASP.NET request validation does not exist in ASP.NET Core; a replacement rejects markup in the URL path, query and form values.
 
 Known weaknesses carried over:
 

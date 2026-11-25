@@ -40,7 +40,7 @@ namespace SocialGoal.Web.Mailers
             {
                 client.Host = mail["Host"];
                 client.Port = mail.GetValue("Port", 587);
-                client.EnableSsl = true;
+                client.EnableSsl = mail.GetValue("EnableSsl", true);
                 if (!string.IsNullOrEmpty(mail["UserName"]))
                     client.Credentials = new NetworkCredential(mail["UserName"], mail["Password"]);
             }

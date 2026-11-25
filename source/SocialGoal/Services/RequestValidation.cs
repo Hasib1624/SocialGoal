@@ -29,7 +29,7 @@ namespace SocialGoal.Web.Services
             var values = context.Request.Query.AsEnumerable();
             if (context.Request.HasFormContentType)
                 values = values.Concat(await context.Request.ReadFormAsync());
-            if (values.Any(pair => pair.Value.Any(IsDangerous)))
+            if (IsDangerous(context.Request.Path.Value) || values.Any(pair => pair.Value.Any(IsDangerous)))
                 throw new InvalidOperationException("A potentially dangerous value was detected in the request.");
             await next(context);
         });
