@@ -8,7 +8,7 @@
 @if (Model.GroupList.Any())
 {
     <table class="table">
-        @Html.Partial("_GroupsTableRows", Model.GroupList)
+        @await Html.PartialAsync("_GroupsTableRows", Model.GroupList)
     </table>    
 
     @Html.PagedListPager(
@@ -20,5 +20,5 @@
 }
 else
 {
-    @Html.Partial("_AlertInfo", "No groups found");
+    @await Html.PartialAsync("_AlertInfo", "No groups found")
 }

@@ -1,20 +1,19 @@
-﻿using System.Drawing.Drawing2D;
-using AutoMapper;
-using PagedList;
+﻿using X.PagedList;
+using X.PagedList.Extensions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SocialGoal.Mappings;
+using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Data.Infrastructure;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core.Models;
 using SocialGoal.Web.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Web.Mailers;
 using SocialGoal.Properties;
-using Microsoft.AspNet.Identity;
 
 namespace SocialGoal.Web.Controllers
 {
@@ -38,15 +37,16 @@ namespace SocialGoal.Web.Controllers
         private readonly IGroupUpdateSupportService groupUpdateSupportService;
         private readonly IGroupUpdateUserService groupUpdateUserService;
 
-        private IUserMailer userMailer = new UserMailer();
+        private IUserMailer userMailer;
         public IUserMailer UserMailer
         {
             get { return userMailer; }
             set { userMailer = value; }
         }
 
-        public GroupController(IGroupService groupService, IGroupUserService groupUserService, IUserService userService, IMetricService metricService, IFocusService focusService, IGroupGoalService groupgoalService, IGroupInvitationService groupInvitationService, ISecurityTokenService securityTokenService, IGroupUpdateService groupUpdateService, IGroupCommentService groupCommentService, IGoalStatusService goalStatusService, IGroupRequestService groupRequestService, IFollowUserService followUserService, IGroupCommentUserService groupCommentUserService, IGroupUpdateSupportService groupUpdateSupportService, IGroupUpdateUserService groupUpdateUserService)
+        public GroupController(IGroupService groupService, IGroupUserService groupUserService, IUserService userService, IMetricService metricService, IFocusService focusService, IGroupGoalService groupgoalService, IGroupInvitationService groupInvitationService, ISecurityTokenService securityTokenService, IGroupUpdateService groupUpdateService, IGroupCommentService groupCommentService, IGoalStatusService goalStatusService, IGroupRequestService groupRequestService, IFollowUserService followUserService, IGroupCommentUserService groupCommentUserService, IGroupUpdateSupportService groupUpdateSupportService, IGroupUpdateUserService groupUpdateUserService, IUserMailer userMailer)
         {
+            this.userMailer = userMailer;
             this.groupService = groupService;
             this.groupInvitationService = groupInvitationService;
             this.userService = userService;
@@ -188,7 +188,7 @@ namespace SocialGoal.Web.Controllers
             GroupFormModel editGroup = Mapper.Map<Group, GroupFormModel>(group);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View("_EditGroup", editGroup);
         }
@@ -247,7 +247,7 @@ namespace SocialGoal.Web.Controllers
             FocusFormModel editFocus = Mapper.Map<Focus, FocusFormModel>(Focus);
             if (Focus == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View("EditFocus", editFocus);
         }
@@ -257,7 +257,7 @@ namespace SocialGoal.Web.Controllers
             var focus = focusService.GetFocus(id);
             if (focus == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(focus);
         }
@@ -268,7 +268,7 @@ namespace SocialGoal.Web.Controllers
             var Focus = focusService.GetFocus(id);
             if (Focus == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             focusService.DeleteFocus(id);
             return RedirectToAction("Index", "Group", new { id = Focus.GroupId });
@@ -313,7 +313,7 @@ namespace SocialGoal.Web.Controllers
             var group = groupService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View("_DeleteGroup", group);
         }
@@ -324,7 +324,7 @@ namespace SocialGoal.Web.Controllers
             var group = groupService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             groupService.DeleteGroup(id);
             groupUserService.DeleteGroupUserByGroupId(id);
@@ -422,7 +422,7 @@ namespace SocialGoal.Web.Controllers
             var goal = groupGoalService.GetGroupGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(goal);
         }
@@ -433,7 +433,7 @@ namespace SocialGoal.Web.Controllers
             var goal = groupGoalService.GetGroupGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             groupGoalService.DeleteGroupGoal(id);
@@ -445,7 +445,7 @@ namespace SocialGoal.Web.Controllers
             var goal = groupGoalService.GetGroupGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             var goalDetails = Mapper.Map<GroupGoal, GroupGoalViewModel>(goal);
             var user = userService.GetUser(goalDetails.GroupUser.UserId);
@@ -506,7 +506,7 @@ namespace SocialGoal.Web.Controllers
                 return PartialView("_UpdateView", updates);
 
             }
-            return null;
+            return new EmptyResult();
         }
 
         public PartialViewResult DisplayUpdates(int id)
@@ -560,7 +560,7 @@ namespace SocialGoal.Web.Controllers
         public JsonResult DisplayCommentCount(int id)
         {
             int commentcount = groupCommentService.GetCommentsByUpdate(id).Count();
-            return Json(commentcount, JsonRequestBehavior.AllowGet);
+            return Json(commentcount);
         }
 
 
@@ -572,7 +572,7 @@ namespace SocialGoal.Web.Controllers
         public JsonResult SearchUserForGroup(string username, int groupId)
         {
             return Json(from g in groupUserService.SearchUserForGroup(username, groupId, userService, groupInvitationService)
-                        select new { label = g.UserName + ", " + g.Email, value = g.UserName, id = g.Id }, JsonRequestBehavior.AllowGet);
+                        select new { label = g.UserName + ", " + g.Email, value = g.UserName, id = g.Id });
         }
 
         public int NoOfUsers(int id)
@@ -721,7 +721,7 @@ namespace SocialGoal.Web.Controllers
                 Data = (from g in groupUpdateService.GetUpdatesWithStatus(id).OrderBy(u => u.UpdateDate)
                         select new { Date = g.UpdateDate.ToString(), Value = g.status }),
                 Target = new { EndDate = goal.EndDate.ToString(), Target = (goal.Target != null) ? goal.Target : 100 }
-            }, JsonRequestBehavior.AllowGet);
+            });
         }
 
 
@@ -831,7 +831,7 @@ namespace SocialGoal.Web.Controllers
             GroupUpdateFormModel editUpdate = Mapper.Map<GroupUpdate, GroupUpdateFormModel>(update);
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("_EditUpdate", editUpdate);
         }
@@ -858,7 +858,7 @@ namespace SocialGoal.Web.Controllers
                 };
                 return PartialView("_UpdateView", updates);
             }
-            return null;
+            return new EmptyResult();
         }
 
         public ActionResult DeleteUpdate(int id)
@@ -867,7 +867,7 @@ namespace SocialGoal.Web.Controllers
 
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("_DeleteUpdate", update);
         }
@@ -878,7 +878,7 @@ namespace SocialGoal.Web.Controllers
             var update = groupUpdateService.GetUpdate(id);
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             groupUpdateService.DeleteUpdate(id);
@@ -908,7 +908,7 @@ namespace SocialGoal.Web.Controllers
         public JsonResult DisplayUpdateSupportCount(int id)
         {
             int supportcount = groupUpdateSupportService.GetSupportcount(id);
-            return Json(supportcount, JsonRequestBehavior.AllowGet);
+            return Json(supportcount);
         }
 
 

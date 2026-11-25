@@ -1,8 +1,7 @@
-﻿@using Microsoft.AspNet.Identity
-@model SocialGoal.Web.ViewModels.GoalViewModel
+﻿@model SocialGoal.Web.ViewModels.GoalViewModel
 @{
 	ViewBag.Title = Model.GoalName;
-	ViewContext.Controller.ViewBag.IncludeJqplot = true;
+	ViewBag.IncludeJqplot = true;
 	Layout = "~/Views/Shared/_GoalLayout.cshtml";
     string goalstatus = Model.GoalStatus.GoalStatusType;
 }
@@ -146,7 +145,7 @@
     }
     <div id="divupdate" style="margin: 0px;">
         <h5 style="margin-left:15px;">Latest Updates</h5>
-        @{ Html.RenderAction("DisplayUpdates", "Goal", Model.GoalId); }
+        @(await Html.ChildActionAsync<GoalController>(c => c.DisplayUpdates(Model.GoalId)))
     </div>
     <div id="divInviteLayer" class="jqmWindow">
         <div id="handle" style="float: right">
@@ -161,14 +160,14 @@
 <div class="span6">
     <!--Graph  section -->
     <div id="graph">
-        @Html.Action("ReportPage", new { id = Model.GoalId })
+        @(await Html.ChildActionAsync<GoalController>(c => c.Reportpage(Model.GoalId)))
         @Html.Hidden("goalId", Model.GoalId)
     </div>
     <!--Graph  section end here-->
     <!--update status section and invite user section -->
     <div class="span12" style="float: right;">
         <!--invite user section -->
-        @Html.Action("InviteUser", "Goal", new { id = Model.GoalId })
+        @(await Html.ChildActionAsync<GoalController>(c => c.InviteUser(Model.GoalId)))
         <!--invite section ends -->
         <!--update status section -->
         <div class="well span6" style="min-height: 202px;">

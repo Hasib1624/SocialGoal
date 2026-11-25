@@ -24,7 +24,7 @@ namespace SocialGoal.Models
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm new password")]
-        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        [Compare("NewPassword", ErrorMessage = "'Confirm new password' and 'New password' do not match.")]
         public string ConfirmPassword { get; set; }
     }
 
@@ -57,7 +57,7 @@ namespace SocialGoal.Models
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "'Confirm password' and 'Password' do not match.")]
         public string ConfirmPassword { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿@using SocialGoal.Web.Core.Extensions
-@model SocialGoal.Web.ViewModels.SearchViewModel
+﻿@model SocialGoal.Web.ViewModels.SearchViewModel
 @{
     ViewBag.Title = "SearchResult";
     Layout = "~/Views/Shared/_PageLayout.cshtml";
@@ -76,7 +75,7 @@
      { 
          <div>           
            <div >@Html.ActionLink(item.GroupName, "Index", "Group", new { id = item.GroupId }, null)</div>
-           <div><small><strong>@Html.Action("NoOfUsers", "Group", new { id = item.GroupId })</strong> Members</small></div>
+           <div><small><strong>@(await Html.ChildActionAsync<GroupController>(c => c.NoOfUsers(item.GroupId)))</strong> Members</small></div>
             <div><small>Created On @item.CreatedDate.ToString("dd MMM yyyy -   hh:mm tt ") </small></div>
          </div>
         <hr style="margin:23px 0px 0px 0px;" />

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using SocialGoal.Model.Models;
 using System.Linq;
-using System.Web;
 
 namespace SocialGoal.Web.ViewModels
 {

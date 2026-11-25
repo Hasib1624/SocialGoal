@@ -14,7 +14,7 @@
     
     @*This is the container that will be replaced by all ajax requests from either paging or changing the filter*@
     <div id="GroupPagingContainer" class="span11" style="margin-top: 10px;">
-        @Html.Partial("_GroupsTable", Model)
+        @await Html.PartialAsync("_GroupsTable", Model)
     </div>
     
 </div>

@@ -1,5 +1,4 @@
-﻿using System.Web;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SocialGoal.Web.ViewModels
 {
@@ -11,7 +10,7 @@ namespace SocialGoal.Web.ViewModels
         public bool IsUrl { get; set; }
         
         [Display(Name = "Local file")]
-        public HttpPostedFileBase File { get; set; }
+        public Microsoft.AspNetCore.Http.IFormFile File { get; set; }
 
         public string LocalPath { get; set; }
 

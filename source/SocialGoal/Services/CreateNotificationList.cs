@@ -3,7 +3,6 @@ using System.Linq;
 using SocialGoal.Model.Models;
 using SocialGoal.Web.ViewModels;
 using SocialGoal.Service;
-using SocialGoal.Web.Core.Models;
 using System;
 
 namespace SocialGoal.Web.Services

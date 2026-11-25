@@ -1,26 +1,26 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SocialGoal.Mappings;
+using SocialGoal.Web.Core.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
-using Microsoft.Owin.Security;
-using SocialGoal.Web.Models;
 using SocialGoal.Models;
 using SocialGoal.Data.Models;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
 using SocialGoal.Web.Mailers;
 using SocialGoal.Web.ViewModels;
-using AutoMapper;
-using System.Drawing;
-using System.IO;
 using SocialGoal.Properties;
-using System.Net;
-using System.Drawing.Drawing2D;
+using System.IO;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using SkiaSharp;
+using SocialGoal.Web.Services;
 using SocialGoal.Web.Helpers;
 
 namespace SocialGoal.Web.Controllers
@@ -36,9 +36,11 @@ namespace SocialGoal.Web.Controllers
         private IFollowRequestService followRequestService;
         private IFollowUserService followUserService;
         private ISecurityTokenService securityTokenService;
-        private IUserMailer userMailer = new UserMailer();
+        private readonly SignInManager<ApplicationUser> signInManager;
+        private readonly IWebHostEnvironment environment;
+        private readonly IImageFetcher imageFetcher;
         private UserManager<ApplicationUser> UserManager;
-        public AccountController(IUserService userService, IUserProfileService userProfileService, IGoalService goalService, IUpdateService updateService, ICommentService commentService, IFollowRequestService followRequestService, IFollowUserService followUserService, ISecurityTokenService securityTokenService, UserManager<ApplicationUser> userManager)
+        public AccountController(IUserService userService, IUserProfileService userProfileService, IGoalService goalService, IUpdateService updateService, ICommentService commentService, IFollowRequestService followRequestService, IFollowUserService followUserService, ISecurityTokenService securityTokenService, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IWebHostEnvironment environment, IImageFetcher imageFetcher)
         {
             this.userService = userService;
             this.userProfileService = userProfileService;
@@ -49,6 +51,9 @@ namespace SocialGoal.Web.Controllers
             this.followUserService = followUserService;
             this.securityTokenService = securityTokenService;
             this.UserManager = userManager;
+            this.signInManager = signInManager;
+            this.environment = environment;
+            this.imageFetcher = imageFetcher;
         }
 
         //
@@ -56,8 +61,8 @@ namespace SocialGoal.Web.Controllers
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
-            if (Request.QueryString["guid"] != null)
-                SocialGoalSessionFacade.JoinGroupOrGoal = Request.QueryString["guid"];
+            if (Request.Query.ContainsKey("guid"))
+                SocialGoalSessionFacade.JoinGroupOrGoal = Request.Query["guid"];
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -71,8 +76,8 @@ namespace SocialGoal.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindAsync(model.Email, model.Password);
-                if (user != null)
+                var user = await UserManager.FindByNameAsync(model.Email);
+                if (user != null && await UserManager.CheckPasswordAsync(user, model.Password))
                 {
                     await SignInAsync(user, model.RememberMe);
                     return RedirectToLocal(returnUrl);
@@ -147,7 +152,7 @@ namespace SocialGoal.Web.Controllers
         public async Task<ActionResult> Disassociate(string loginProvider, string providerKey)
         {
             ManageMessageId? message = null;
-            IdentityResult result = await UserManager.RemoveLoginAsync(User.Identity.GetUserId(), new UserLoginInfo(loginProvider, providerKey));
+            IdentityResult result = await UserManager.RemoveLoginAsync(await CurrentUserAsync(), loginProvider, providerKey);
             if (result.Succeeded)
             {
                 message = ManageMessageId.RemoveLoginSuccess;
@@ -161,7 +166,7 @@ namespace SocialGoal.Web.Controllers
 
         //
         // GET: /Account/Manage
-        public ActionResult Manage(ManageMessageId? message)
+        public async Task<ActionResult> Manage(ManageMessageId? message)
         {
             ViewBag.StatusMessage =
                 message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
@@ -169,7 +174,7 @@ namespace SocialGoal.Web.Controllers
                 : message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
                 : message == ManageMessageId.Error ? "An error has occurred."
                 : "";
-            ViewBag.HasLocalPassword = HasPassword();
+            ViewBag.HasLocalPassword = await HasPasswordAsync();
             ViewBag.ReturnUrl = Url.Action("Manage");
             return View();
         }
@@ -180,14 +185,14 @@ namespace SocialGoal.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Manage(ManageUserViewModel model)
         {
-            bool hasPassword = HasPassword();
+            bool hasPassword = await HasPasswordAsync();
             ViewBag.HasLocalPassword = hasPassword;
             ViewBag.ReturnUrl = Url.Action("Manage");
             if (hasPassword)
             {
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword, model.NewPassword);
+                    IdentityResult result = await UserManager.ChangePasswordAsync(await CurrentUserAsync(), model.OldPassword, model.NewPassword);
                     if (result.Succeeded)
                     {
                         return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
@@ -201,15 +206,16 @@ namespace SocialGoal.Web.Controllers
             else
             {
                 // User does not have a password so remove any validation errors caused by a missing OldPassword field
-                ModelState state = ModelState["OldPassword"];
+                var state = ModelState["OldPassword"];
                 if (state != null)
                 {
                     state.Errors.Clear();
+                    state.ValidationState = Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Valid;
                 }
 
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
+                    IdentityResult result = await UserManager.AddPasswordAsync(await CurrentUserAsync(), model.NewPassword);
                     if (result.Succeeded)
                     {
                         return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
@@ -233,7 +239,8 @@ namespace SocialGoal.Web.Controllers
         public ActionResult ExternalLogin(string provider, string returnUrl)
         {
             // Request a redirect to the external login provider
-            return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+            var redirect = Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl });
+            return Challenge(signInManager.ConfigureExternalAuthenticationProperties(provider, redirect), provider);
         }
 
         //
@@ -241,14 +248,14 @@ namespace SocialGoal.Web.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> ExternalLoginCallback(string returnUrl)
         {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync();
+            var loginInfo = await signInManager.GetExternalLoginInfoAsync();
             if (loginInfo == null)
             {
                 return RedirectToAction("Login");
             }
 
             // Sign in the user with this external login provider if the user already has a login
-            var user = await UserManager.FindAsync(loginInfo.Login);
+            var user = await UserManager.FindByLoginAsync(loginInfo.LoginProvider, loginInfo.ProviderKey);
             if (user != null)
             {
                 await SignInAsync(user, isPersistent: false);
@@ -258,8 +265,8 @@ namespace SocialGoal.Web.Controllers
             {
                 // If the user does not have an account, then prompt the user to create an account
                 ViewBag.ReturnUrl = returnUrl;
-                ViewBag.LoginProvider = loginInfo.Login.LoginProvider;
-                return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { UserName = loginInfo.DefaultUserName });
+                ViewBag.LoginProvider = loginInfo.LoginProvider;
+                return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { UserName = loginInfo.Principal.FindFirstValue(ClaimTypes.Name)?.Replace(" ", "") });
             }
         }
 
@@ -270,19 +277,20 @@ namespace SocialGoal.Web.Controllers
         public ActionResult LinkLogin(string provider)
         {
             // Request a redirect to the external login provider to link a login for the current user
-            return new ChallengeResult(provider, Url.Action("LinkLoginCallback", "Account"), User.Identity.GetUserId());
+            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, Url.Action("LinkLoginCallback", "Account"), User.Identity.GetUserId());
+            return Challenge(properties, provider);
         }
 
         //
         // GET: /Account/LinkLoginCallback
         public async Task<ActionResult> LinkLoginCallback()
         {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync(XsrfKey, User.Identity.GetUserId());
+            var loginInfo = await signInManager.GetExternalLoginInfoAsync(User.Identity.GetUserId());
             if (loginInfo == null)
             {
                 return RedirectToAction("Manage", new { Message = ManageMessageId.Error });
             }
-            var result = await UserManager.AddLoginAsync(User.Identity.GetUserId(), loginInfo.Login);
+            var result = await UserManager.AddLoginAsync(await CurrentUserAsync(), loginInfo);
             if (result.Succeeded)
             {
                 return RedirectToAction("Manage");
@@ -305,7 +313,7 @@ namespace SocialGoal.Web.Controllers
             if (ModelState.IsValid)
             {
                 // Get the information about the user from the external login provider
-                var info = await AuthenticationManager.GetExternalLoginInfoAsync();
+                var info = await signInManager.GetExternalLoginInfoAsync();
                 if (info == null)
                 {
                     return View("ExternalLoginFailure");
@@ -314,7 +322,7 @@ namespace SocialGoal.Web.Controllers
                 var result = await UserManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    result = await UserManager.AddLoginAsync(user.Id, info.Login);
+                    result = await UserManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
                         await SignInAsync(user, isPersistent: false);
@@ -332,9 +340,9 @@ namespace SocialGoal.Web.Controllers
         // POST: /Account/LogOff
         //[HttpPost]
         //[ValidateAntiForgeryToken]
-        public ActionResult LogOff()
+        public async Task<ActionResult> LogOff()
         {
-            AuthenticationManager.SignOut();
+            await signInManager.SignOutAsync();
             SocialGoalSessionFacade.Clear();
             return RedirectToAction("Index", "Home");
         }
@@ -347,22 +355,14 @@ namespace SocialGoal.Web.Controllers
             return View();
         }
 
-        [ChildActionOnly]
+        [NonAction]
         public ActionResult RemoveAccountList()
         {
-            var linkedAccounts = UserManager.GetLogins(User.Identity.GetUserId());
-            ViewBag.ShowRemoveButton = HasPassword() || linkedAccounts.Count > 1;
+            // child action: rendered synchronously from the Manage view
+            var user = CurrentUserAsync().GetAwaiter().GetResult();
+            var linkedAccounts = UserManager.GetLoginsAsync(user).GetAwaiter().GetResult();
+            ViewBag.ShowRemoveButton = user.PasswordHash != null || linkedAccounts.Count > 1;
             return (ActionResult)PartialView("_RemoveAccountPartial", linkedAccounts);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && UserManager != null)
-            {
-                UserManager.Dispose();
-                UserManager = null;
-            }
-            base.Dispose(disposing);
         }
 
         [AllowAnonymous]
@@ -377,6 +377,7 @@ namespace SocialGoal.Web.Controllers
             return PartialView("_Registerpartial", new RegisterViewModel());
         }
 
+        [NonAction]
         public IEnumerable<ApplicationUser> SearchUser(string name)
         {
             var users = userService.SearchUser(name);
@@ -391,44 +392,52 @@ namespace SocialGoal.Web.Controllers
         }
 
         [HttpPost]
-        public ActionResult UploadImage(UploadImageViewModel model)
+        public async Task<ActionResult> UploadImage(UploadImageViewModel model)
         {
             //Check if all simple data annotations are valid
             if (ModelState.IsValid)
             {
                 //Prepare the needed variables
-                Bitmap original = null;
-                var name = "newimagefile";
+                byte[] original = null;
                 var errorField = string.Empty;
 
                 if (model.IsUrl)
                 {
                     errorField = "Url";
-                    name = GetUrlFileName(model.Url);
-                    original = GetImageFromUrl(model.Url);
+                    original = await imageFetcher.FetchAsync(model.Url);
                 }
                 else if (model.File != null)
                 {
                     errorField = "File";
-                    name = Path.GetFileNameWithoutExtension(model.File.FileName);
-                    original = Bitmap.FromStream(model.File.InputStream) as Bitmap;
+                    if (model.File.Length <= ImageFetcher.MaxBytes)
+                    {
+                        using var stream = new MemoryStream();
+                        await model.File.CopyToAsync(stream);
+                        original = stream.ToArray();
+                    }
                 }
 
+                var img = ImageCropper.CropToPng(original, model.X, model.Y, model.Width, model.Height);
+
                 //If we had success so far
-                if (original != null)
+                if (img != null)
                 {
-                    var img = CreateImage(original, model.X, model.Y, model.Width, model.Height);
-                    var fileName = Guid.NewGuid().ToString();
-                    var oldFilepath = userService.GetUser(User.Identity.GetUserId()).ProfilePicUrl;
-                    var oldFile = Server.MapPath(oldFilepath);
+                    var fileName = Guid.NewGuid().ToString() + ".png";
+                    var folder = Path.Combine(environment.WebRootPath, "Content", "ProfilePics");
+                    var oldFile = userService.GetUser(User.Identity.GetUserId()).ProfilePicUrl;
+
                     //Demo purposes only - save image in the file system
-                    var fn = Server.MapPath("~/Content/ProfilePics/" + fileName + ".png");
-                    img.Save(fn, System.Drawing.Imaging.ImageFormat.Png);
-                    userService.SaveImageURL(User.Identity.GetUserId(), "~/Content/ProfilePics/" + fileName + ".png");
-                    if (System.IO.File.Exists(oldFile))
+                    Directory.CreateDirectory(folder);
+                    await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, fileName), img);
+                    userService.SaveImageURL(User.Identity.GetUserId(), "~/Content/ProfilePics/" + fileName);
+
+                    // delete only a previous upload (a GUID file name), never the shared default avatar
+                    var oldName = Path.GetFileName(oldFile ?? string.Empty);
+                    if (Guid.TryParse(Path.GetFileNameWithoutExtension(oldName), out _))
                     {
-                        System.IO.File.Delete(oldFile);
+                        System.IO.File.Delete(Path.Combine(folder, oldName));
                     }
+
                     return RedirectToAction("UserProfile", new { id = User.Identity.GetUserId() });
                 }
                 else //Otherwise we add an error and return to the (previous) view with the model data
@@ -437,77 +446,6 @@ namespace SocialGoal.Web.Controllers
 
             return View("ImageUpload", model);
         }
-
-        /// <summary>
-        /// Gets an image from the specified URL.
-        /// </summary>
-        /// <param name="url">The URL containing an image.</param>
-        /// <returns>The image as a bitmap.</returns>
-        Bitmap GetImageFromUrl(string url)
-        {
-            var buffer = 1024;
-            Bitmap image = null;
-
-            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-                return image;
-
-            using (var ms = new MemoryStream())
-            {
-                var req = WebRequest.Create(url);
-
-                using (var resp = req.GetResponse())
-                {
-                    using (var stream = resp.GetResponseStream())
-                    {
-                        var bytes = new byte[buffer];
-                        var n = 0;
-
-                        while ((n = stream.Read(bytes, 0, buffer)) != 0)
-                            ms.Write(bytes, 0, n);
-                    }
-                }
-
-                image = Bitmap.FromStream(ms) as Bitmap;
-            }
-
-            return image;
-        }
-
-        /// <summary>
-        /// Gets the filename that is placed under a certain URL.
-        /// </summary>
-        /// <param name="url">The URL which should be investigated for a file name.</param>
-        /// <returns>The file name.</returns>
-        string GetUrlFileName(string url)
-        {
-            var parts = url.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            var last = parts[parts.Length - 1];
-            return Path.GetFileNameWithoutExtension(last);
-        }
-
-        /// <summary>
-        /// Creates a small image out of a larger image.
-        /// </summary>
-        /// <param name="original">The original image which should be cropped (will remain untouched).</param>
-        /// <param name="x">The value where to start on the x axis.</param>
-        /// <param name="y">The value where to start on the y axis.</param>
-        /// <param name="width">The width of the final image.</param>
-        /// <param name="height">The height of the final image.</param>
-        /// <returns>The cropped image.</returns>
-        Bitmap CreateImage(Bitmap original, int x, int y, int width, int height)
-        {
-            var img = new Bitmap(width, height);
-
-            using (var g = Graphics.FromImage(img))
-            {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.DrawImage(original, new Rectangle(0, 0, width, height), x, y, width, height, GraphicsUnit.Pixel);
-            }
-
-            return img;
-        }
-
 
         private IEnumerable<string> GetErrorsFromModelState()
         {
@@ -557,7 +495,7 @@ namespace SocialGoal.Web.Controllers
             UserProfileFormModel editUser = Mapper.Map<UserProfile, UserProfileFormModel>(user);
             if (user == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("EditBasicInfo", editUser);
         }
@@ -568,7 +506,7 @@ namespace SocialGoal.Web.Controllers
             UserProfileFormModel editUser = Mapper.Map<UserProfile, UserProfileFormModel>(user);
             if (user == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("EditPersonalInfo", editUser);
         }
@@ -650,7 +588,7 @@ namespace SocialGoal.Web.Controllers
                 if (followers.Count() != 0)
                     return PartialView("_FollowersView", followers);
                 else
-                    return null;
+                    return new EmptyResult();
             }
 
             return View("FollowerUsers", followers);
@@ -671,7 +609,7 @@ namespace SocialGoal.Web.Controllers
                 if (followings.Count() != 0)
                     return PartialView("_FollowingsView", followings);
                 else
-                    return null;
+                    return new EmptyResult();
             }
 
             return View("FollowingUsers", followings);
@@ -679,56 +617,26 @@ namespace SocialGoal.Web.Controllers
 
 
         #region Helpers
-        // Used for XSRF protection when adding external logins
-        private const string XsrfKey = "XsrfId";
-
-        //public IAuthenticationManager AuthenticationManager
-        //{
-        //    get
-        //    {
-        //        return HttpContext.GetOwinContext().Authentication;
-        //    }
-        //    set { _authnManager = value; }
-        //}
-
-        // Add this private variable
-      private IAuthenticationManager _authnManager;
-
-        // Modified this from private to public and add the setter
-      public IAuthenticationManager AuthenticationManager
-      {
-          get
-          {
-              if (_authnManager == null)
-                  _authnManager = HttpContext.GetOwinContext().Authentication;
-              return _authnManager;
-          }
-          set { _authnManager = value; }
-      }
-
         private async Task SignInAsync(ApplicationUser user, bool isPersistent)
         {
-            AuthenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-            var identity = await UserManager.CreateIdentityAsync(user, DefaultAuthenticationTypes.ApplicationCookie);
-            AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, identity);
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await signInManager.SignInAsync(user, isPersistent);
         }
+
+        private Task<ApplicationUser> CurrentUserAsync() => UserManager.GetUserAsync(User);
 
         private void AddErrors(IdentityResult result)
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError("", error);
+                ModelState.AddModelError("", error.Description);
             }
         }
 
-        private bool HasPassword()
+        private async Task<bool> HasPasswordAsync()
         {
-            var user = UserManager.FindById(User.Identity.GetUserId());
-            if (user != null)
-            {
-                return user.PasswordHash != null;
-            }
-            return false;
+            var user = await CurrentUserAsync();
+            return user?.PasswordHash != null;
         }
 
         public enum ManageMessageId
@@ -751,33 +659,6 @@ namespace SocialGoal.Web.Controllers
             }
         }
 
-        private class ChallengeResult : HttpUnauthorizedResult
-        {
-            public ChallengeResult(string provider, string redirectUri) : this(provider, redirectUri, null)
-            {
-            }
-
-            public ChallengeResult(string provider, string redirectUri, string userId)
-            {
-                LoginProvider = provider;
-                RedirectUri = redirectUri;
-                UserId = userId;
-            }
-
-            public string LoginProvider { get; set; }
-            public string RedirectUri { get; set; }
-            public string UserId { get; set; }
-
-            public override void ExecuteResult(ControllerContext context)
-            {
-                var properties = new AuthenticationProperties() { RedirectUri = RedirectUri };
-                if (UserId != null)
-                {
-                    properties.Dictionary[XsrfKey] = UserId;
-                }
-                context.HttpContext.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
-            }
-        }
         #endregion
     }
 }

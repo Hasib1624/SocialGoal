@@ -1,8 +1,7 @@
-﻿@using Microsoft.AspNet.Identity
-@model SocialGoal.Web.ViewModels.GroupGoalViewModel
+﻿@model SocialGoal.Web.ViewModels.GroupGoalViewModel
 @{
     ViewBag.Title = Model.GoalName;
-    ViewContext.Controller.ViewBag.IncludeJqplot = true;
+    ViewBag.IncludeJqplot = true;
     Layout = "~/Views/Shared/_GoalLayout.cshtml";
     string goalstatus = Model.GoalStatus.GoalStatusType;
 }
@@ -129,7 +128,7 @@
         </table>
     }
     <div id="divgroupupdate" style="margin: 0px;">
-        @{ Html.RenderAction("DisplayUpdates", "Group", Model.GroupGoalId); }
+        @(await Html.ChildActionAsync<GroupController>(c => c.DisplayUpdates(Model.GroupGoalId)))
     </div>
     <div id="divInviteLayer" class="jqmWindow">
         <div id="handle" style="float: right">
@@ -144,7 +143,7 @@
 <div class="span6">
     <!--Graph  section -->
     <div id="graph">
-        @Html.Action("ReportPage", new { id = Model.GroupGoalId })
+        @(await Html.ChildActionAsync<GroupController>(c => c.Reportpage(Model.GroupGoalId)))
     </div>
     <!--Graph Section End here-->
     <!--update status section  -->

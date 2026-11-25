@@ -1,4 +1,4 @@
-﻿using PagedList;
+﻿using X.PagedList;
 using SocialGoal.Service;
 
 namespace SocialGoal.Web.ViewModels

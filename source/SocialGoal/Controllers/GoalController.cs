@@ -1,17 +1,16 @@
-﻿using AutoMapper;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SocialGoal.Mappings;
+using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Model.Models;
 using SocialGoal.Service;
-using SocialGoal.Web.Core.Models;
 using SocialGoal.Web.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using SocialGoal.Web.Core.Extensions;
 using SocialGoal.Web.Mailers;
 using SocialGoal.Properties;
-using Microsoft.AspNet.Identity;
 
 namespace SocialGoal.Web.Controllers
 {
@@ -31,15 +30,16 @@ namespace SocialGoal.Web.Controllers
         private readonly ICommentUserService commentUserService;
         private readonly IUpdateSupportService updateSupportService;
 
-        private IUserMailer userMailer = new UserMailer();
+        private IUserMailer userMailer;
         public IUserMailer UserMailer
         {
             get { return userMailer; }
             set { userMailer = value; }
         }
 
-        public GoalController(IGoalService goalService, IMetricService metricService, IFocusService focusService, ISupportService supportService, IUpdateService updateService, ICommentService commentService, IUserService userService, ISecurityTokenService securityTokenService, ISupportInvitationService supportInvitationService, IGoalStatusService goalStatusService, ICommentUserService commentUserService, IUpdateSupportService updateSupportService)
+        public GoalController(IGoalService goalService, IMetricService metricService, IFocusService focusService, ISupportService supportService, IUpdateService updateService, ICommentService commentService, IUserService userService, ISecurityTokenService securityTokenService, ISupportInvitationService supportInvitationService, IGoalStatusService goalStatusService, ICommentUserService commentUserService, IUpdateSupportService updateSupportService, IUserMailer userMailer)
         {
+            this.userMailer = userMailer;
             this.goalService = goalService;
             this.supportInvitationService = supportInvitationService;
             this.metricService = metricService;
@@ -59,7 +59,7 @@ namespace SocialGoal.Web.Controllers
             var goal = goalService.GetGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             var goalDetails = Mapper.Map<Goal, GoalViewModel>(goal);
             goalDetails.Supported = supportService.IsGoalSupported(id, User.Identity.GetUserId());
@@ -114,7 +114,7 @@ namespace SocialGoal.Web.Controllers
             GoalFormModel editGoal = Mapper.Map<Goal, GoalFormModel>(goal);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             var metrics = metricService.GetMetrics();
             if (goal.Metric != null)
@@ -164,7 +164,7 @@ namespace SocialGoal.Web.Controllers
             var goal = goalService.GetGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(goal);
         }
@@ -175,7 +175,7 @@ namespace SocialGoal.Web.Controllers
             var goal = goalService.GetGoal(id);
             if (goal == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             goalService.DeleteGoal(id);
@@ -264,7 +264,7 @@ namespace SocialGoal.Web.Controllers
                      return PartialView("_UpdateView", updates);
 
             }
-            return null;
+            return new EmptyResult();
         }
 
         public PartialViewResult InviteUser(int id)
@@ -316,13 +316,13 @@ namespace SocialGoal.Web.Controllers
         public JsonResult DisplayCommentCount(int UpdId)
         {
             int commentcount = commentService.GetCommentsByUpdate(UpdId).Count();
-            return Json(commentcount, JsonRequestBehavior.AllowGet);
+            return Json(commentcount);
         }
 
         public JsonResult SearchUser(string username, int goalId)
         {
             return Json(from g in supportService.SearchUserToSupport(username, goalId, userService, supportInvitationService,User.Identity.GetUserId())
-                        select new { label = g.UserName + ", " + g.Email, value = g.UserName, id = g.Id }, JsonRequestBehavior.AllowGet);
+                        select new { label = g.UserName + ", " + g.Email, value = g.UserName, id = g.Id });
         }
 
         public int NoOfComments(int id)
@@ -330,6 +330,7 @@ namespace SocialGoal.Web.Controllers
             return commentService.GetCommentcount(id);
         }
 
+        [NonAction]
         public IEnumerable<Goal> SearchGoal(string name)
         {
             var goals = Mapper.Map<IEnumerable<Goal>, IEnumerable<GoalViewModel>>(goalService.SearchGoal(name)).ToList();
@@ -403,7 +404,7 @@ namespace SocialGoal.Web.Controllers
                 Data = (from g in updateService.GetUpdatesWithStatus(id).OrderBy(u => u.UpdateDate)
                         select new { Date = g.UpdateDate.ToString(), Value = g.status }),
                 Target = new { EndDate = goal.EndDate.ToString(), Target = (goal.Target != null) ? goal.Target : 100 }
-            }, JsonRequestBehavior.AllowGet);
+            });
         }
 
         public double GoalProgress(int id)
@@ -486,7 +487,7 @@ namespace SocialGoal.Web.Controllers
 
             if (Request.IsAjaxRequest())
             {
-                return Json(goalsViewModel, JsonRequestBehavior.AllowGet);
+                return Json(goalsViewModel);
             }
             return View("ListOfGoals", goalsList);
         }
@@ -497,7 +498,7 @@ namespace SocialGoal.Web.Controllers
             UpdateFormModel editUpdate = Mapper.Map<Update, UpdateFormModel>(update);
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("_EditUpdate", editUpdate);
         }
@@ -523,7 +524,7 @@ namespace SocialGoal.Web.Controllers
                 };
                 return PartialView("_UpdateView", updates);
             }
-            return null;
+            return new EmptyResult();
         }
 
         public ActionResult DeleteUpdate(int id)
@@ -532,7 +533,7 @@ namespace SocialGoal.Web.Controllers
 
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return PartialView("_DeleteUpdate", update);
         }
@@ -543,7 +544,7 @@ namespace SocialGoal.Web.Controllers
             var update = updateService.GetUpdate(id);
             if (update == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             updateService.DeleteUpdate(id);
@@ -571,7 +572,7 @@ namespace SocialGoal.Web.Controllers
         public JsonResult DisplayUpdateSupportCount(int id)
         {
             int supportcount = updateSupportService.GetSupportcount(id);
-            return Json(supportcount, JsonRequestBehavior.AllowGet);
+            return Json(supportcount);
         }
 
         public PartialViewResult SupportersOfUpdate(int id)

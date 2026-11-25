@@ -27,7 +27,7 @@
         <div class="span12" id="goalListContainer" style="margin-top:10px;">
        <hr />
           <table class="table">
-        @Html.Partial("_Goalslist",Model.GoalList)
+        @await Html.PartialAsync("_Goalslist",Model.GoalList)
        </table>
         </div>
         if (Model.GoalList.Count() == 5)
